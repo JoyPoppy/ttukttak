@@ -458,9 +458,11 @@ html.notimer .timer { display: none; }
 <div class="over" id="settings" hidden role="dialog" aria-modal="true" aria-labelledby="setTitle">
   <div class="setbox">
     <h2 id="setTitle">설정 <button class="x" id="setClose" type="button" aria-label="닫기">✕</button></h2>
-    <h3>소리 · 화면</h3>
+    <h3>화면</h3>
+    <!-- 효과음·진동: 다듬을 때까지 설정에서 숨김 (main.js FX_READY)
     <div class="setrow"><span>효과음</span><button class="toggle" type="button" role="switch" data-set="sound" aria-label="효과음"></button></div>
     <div class="setrow"><span>진동<small>틀렸을 때 (휴대폰)</small></span><button class="toggle" type="button" role="switch" data-set="vibe" aria-label="진동"></button></div>
+    -->
     <div class="setrow"><span>움직임 줄이기<small>꽃가루·넘기기·흔들림을 끄고 바로 보여 줘요</small></span><button class="toggle" type="button" role="switch" data-set="calm" aria-label="움직임 줄이기"></button></div>
     <div class="setrow"><span>글자 크기</span><span class="seg" data-seg="size"><button type="button" data-v="normal">보통</button><button type="button" data-v="big">크게</button></span></div>
     <div class="setrow"><span>진실 화면 글자 속도</span><span class="seg" data-seg="type"><button type="button" data-v="slow">느림</button><button type="button" data-v="normal">보통</button><button type="button" data-v="fast">빠름</button><button type="button" data-v="instant">바로</button></span></div>
@@ -470,7 +472,7 @@ html.notimer .timer { display: none; }
       <li>아래에서 인물을 고르고, 단서에 맞는 자리를 눌러 앉혀요.</li>
       <li>맞으면 그 자리에 고정되고, 틀리면 호롱불이 하나 꺼져요. 다 꺼지면 엽전이나 광고로 다시 켜서 이어 할 수 있어요.</li>
       <li>단서를 누르면 거기 이름이 나온 사람이 반짝여요. 다 맞힌 단서는 아래로 내려가요.</li>
-      <li>모두 앉히면 범인 단서를 보고 판에서 범인을 눌러 지목해요. 틀리면 호롱불이 하나 꺼져요.</li>
+      <li>모두 앉히면 범인 단서가 열려요. 단서를 보고 판에서 범인을 눌러 지목해요. 틀리면 호롱불이 하나 꺼져요.</li>
       <li>막히면 족집게(30냥)로 한 명을 콕 집어 앉힐 수 있어요. 대신 별 3개는 못 받아요.</li>
       <li>다시 하면 같은 이야기라도 자리와 단서가 새로 나와요.</li>
     </ol>
@@ -1025,9 +1027,10 @@ function applySettings() {
   document.querySelectorAll('[data-seg]').forEach(g => g.querySelectorAll('button').forEach(b => b.setAttribute('aria-pressed', settings[g.dataset.seg] === b.dataset.v)));
   store.set('settings', settings);
 }
+const FX_READY = false; // 효과음·진동은 아직 제대로 안 들리고(아이폰은 진동 미지원) 설정에서도 숨겨 둠 — 다듬으면 true + index.html 설정 줄 되살리기
 let actx;
 function sfx(kind) {
-  if (!settings.sound) return;
+  if (!FX_READY || !settings.sound) return;
   try {
     actx = actx || new (window.AudioContext || window.webkitAudioContext)();
     const notes = { ok: [[660, .08], [880, .12]], no: [[220, .18]], tap: [[520, .05]], win: [[523, .12], [659, .12], [784, .12], [1047, .3]], hint: [[740, .08], [988, .14]], hunt: [[294, .16], [277, .16], [440, .34]] }[kind];
@@ -1040,7 +1043,7 @@ function sfx(kind) {
     }
   } catch { /* 소리를 못 내는 환경이면 조용히 넘어간다 */ }
 }
-const buzz = () => { if (settings.vibe && navigator.vibrate) navigator.vibrate(120); };
+const buzz = () => { if (FX_READY && settings.vibe && navigator.vibrate) navigator.vibrate(120); };
 
 // ---------- 지금 판 ----------
 let EP, RUN, BOARD, STAGE, NAMES = {}, TEXT = { clues: [], culprit: [] }, clueOrder = [], trayOrder = [];
