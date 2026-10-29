@@ -96,33 +96,34 @@ h1 { margin: 0; font: 400 30px/1.2 var(--font-head); text-wrap: balance; }
 .accusing .bed.lock .who .face { animation: suspectPulse 1.3s ease-in-out infinite; box-shadow: 0 0 0 3px #e0564a, 0 2px 4px rgb(0 0 0 / .3); }
 @keyframes suspectPulse { 50% { transform: scale(1.08); } }
 
-.clues { --line: 30px; position: sticky; top: 14px; color: var(--paper-ink); display: grid; perspective: 2400px; perspective-origin: 50% 0;
+.clues { --line: 30px; position: sticky; top: 14px; color: var(--paper-ink); display: grid; perspective: 2400px; perspective-origin: 50% 0; overflow: clip; /* 걷히는 장은 메모장 밖으로 안 나가고 윗단 밑으로 사라짐 */
   border-radius: 2px 2px 8px 8px; box-shadow: 0 2px 0 #e9dcc0, 0 4px 0 #dbc8a2, 0 18px 40px rgb(0 0 0 / .45); }
 /* 단서 메모장: 흰 무명실로 윗단을 꿰맨 한지 공책(서민 공책). 글줄(--line)이 공책 줄에 얹히도록 줄 간격을 맞춘다 */
 .page { grid-area: 1 / 1; position: relative; display: grid; align-content: start; gap: 0; padding: 46px 14px 14px 10px; border-radius: 2px 2px 8px 8px; backface-visibility: hidden; -webkit-backface-visibility: hidden;
   background:
     repeating-linear-gradient(transparent 0 calc(var(--line) - 1px), rgb(150 110 60 / .2) calc(var(--line) - 1px) var(--line)) 0 46px / 100% 100% no-repeat,
     var(--memo-paper, none) center / cover, #f8eedb; }
-/* 넘기는 한 장 = 앞면(단서) + 뒷면(빈 종이). 스프링(위 가장자리)을 축으로 180° 넘어가고, 다 넘어갈 즈음 사라진다 */
+/* 단서 장은 뒤집지 않고(나무판처럼 보이고 뒷면이 거울글씨로 비침 — 사용자) 불투명한 채로 윗단(스프링) 밑으로 쓱 올라가 걷힌다 */
 .sheet { grid-area: 1 / 1; z-index: 2; display: grid; transform-style: preserve-3d; transform-origin: 50% 0;
-  transition: transform 1.1s cubic-bezier(.45, .05, .3, 1), opacity .2s ease; }
+  transition: transform .45s cubic-bezier(.3, .7, .3, 1), opacity .3s ease; }
 .sheet .page.front { grid-area: 1 / 1; }
-.sheet .page.flipside { grid-area: 1 / 1; transform: rotateX(180deg); background: linear-gradient(rgb(120 90 40 / .1), rgb(120 90 40 / .1)), var(--memo-paper, none) center / cover, #efe4cc; box-shadow: inset 0 0 30px rgb(120 90 40 / .18); }
+.sheet .page.flipside { display: none; }
 /* 들릴수록 앞면이 아래부터 어두워진다 (빛을 덜 받음) */
-.sheet .page.front::after { content: ''; position: absolute; inset: 0; border-radius: inherit; pointer-events: none; background: linear-gradient(to top, rgb(70 45 15 / .4), rgb(70 45 15 / 0) 75%); opacity: 0; transition: opacity .55s ease; }
-.clues.flipped .sheet { transform: rotateX(180deg); opacity: 0; pointer-events: none; transition: transform 1.1s cubic-bezier(.45, .05, .3, 1), opacity .25s ease .85s; }
+.sheet .page.front::after { content: ''; position: absolute; inset: 0; border-radius: inherit; pointer-events: none; background: linear-gradient(to top, rgb(70 45 15 / .4), rgb(70 45 15 / 0) 75%); opacity: 0; transition: opacity .3s ease; }
+.clues.flipped .sheet { transform: translateY(-102%) rotateX(10deg); opacity: 0; pointer-events: none; transition: transform .55s cubic-bezier(.5, 0, .5, 1), opacity .08s linear .5s; }
+.clues.flipped .sheet .page.front { box-shadow: 0 12px 20px rgb(60 35 10 / .3); } /* 들린 장 밑으로 그림자 — 종이가 겹쳐 비치지 않고 불투명한 채로 올라간다 */
 .clues.flipped .sheet .page.front::after { opacity: 1; }
-/* 아래 장(진실): 넘어가는 종이 그림자가 위에서 걷힌다 */
-.page.back { visibility: hidden; transition: visibility 0s 1.1s; }
+/* 아래 장(진실): 걷히는 종이 그림자가 위에서 걷힌다 */
+.page.back { visibility: hidden; transition: visibility 0s .55s; }
 .page.back::after { content: ''; position: absolute; inset: 0; border-radius: inherit; pointer-events: none; background: linear-gradient(rgb(40 25 5 / .28), rgb(40 25 5 / 0) 60%); opacity: 1; }
 .clues.flipped .page.back { visibility: visible; transition: none; }
-.clues.flipped .page.back::after { animation: unshade 1.1s ease forwards; }
+.clues.flipped .page.back::after { animation: unshade .5s ease forwards; }
 @keyframes unshade { to { opacity: 0; } }
-/* 다음 이야기로 갈 때: 진실 쪽 복사본이 스프링(위)을 축으로 들려 넘어가며 사라진다. 그동안 밑에 새 단서 쪽 */
+/* 다음 이야기로 갈 때: 진실 쪽 복사본이 같은 식으로 들려 올라가며 걷힌다. 그동안 밑에 새 단서 쪽 */
 .clues.instant .sheet, .clues.instant .page.back { transition: none !important; }
-.page.leaving { grid-area: 1 / 1; z-index: 4; visibility: visible !important; transform-origin: 50% 0; pointer-events: none; animation: leaveUp 1.1s cubic-bezier(.45, .05, .3, 1) forwards; }
+.page.leaving { grid-area: 1 / 1; z-index: 4; visibility: visible !important; transform-origin: 50% 0; pointer-events: none; animation: leaveUp .55s cubic-bezier(.5, 0, .5, 1) forwards; box-shadow: 0 12px 20px rgb(60 35 10 / .3); }
 .page.leaving::after { animation: none; opacity: 0; }
-@keyframes leaveUp { 0% { transform: rotateX(0); } 75% { opacity: 1; } 100% { transform: rotateX(150deg); opacity: 0; } }
+@keyframes leaveUp { 0% { transform: none; } 92% { opacity: 1; } 100% { transform: translateY(-102%) rotateX(10deg); opacity: 0; } }
 .page.leaving .fade { opacity: 1; transform: none; }
 .clues::before { content: ''; position: absolute; z-index: 3; top: 0; left: 0; right: 0; aspect-ratio: 12.5; pointer-events: none; border-radius: 2px 2px 0 0; /* 흰 실로 꿰맨 윗단(그림) — 넘기는 장이 이 밑으로 넘어간다 */
   background: var(--memo-stitch, none) 0 0 / 100% 100% no-repeat; filter: drop-shadow(0 1px 1px rgb(60 30 0 / .25)); }
