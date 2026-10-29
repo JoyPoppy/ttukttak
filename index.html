@@ -1083,6 +1083,71 @@ function posterStory(story) {
   return { lead: parts.join(' '), hook, size: len <= 16 ? 'xl' : len <= 26 ? 'l' : 'm' };
 }
 
+// ── nudge.js ──
+// 생각의 실마리(무료 힌트)와 첫 편 안내판이 같이 쓴다 (DOM 없음).
+// 지금까지 맞힌 자리(at)만 가지고, 다음에 '확실히' 알 수 있는 한 사람과 그걸 알려 주는 단서를 찾는다.
+// 사람이 푸는 방식과 같게: 쓸 수 있는 단서 = 한 사람 단서, 또는 상대가 이미 앉은 두 사람 단서. 찬 자리는 뺀다.
+
+const KIND_RANK = { direct: 0, relation: 1, elim: 2, combo: 3, last: 4 };
+const less = (a, b) => { for (let k = 0; k < a.length; k++) if (a[k] !== b[k]) return a[k] < b[k]; return false; };
+
+/** nextStep(clues, at, board, roles, order?) → { role, clues: [i], match: [seat], free: seat, kind } | null
+ *  kind: direct(한 사람 단서가 자리를 바로) · relation(앉은 사람 기준 관계) · elim(맞는 자리 여럿 중 찬 자리 빼고 하나) · combo(단서 여러 개를 겹쳐 하나) · last(단서 없이 남은 빈자리 하나)
+ *  match = 그 단서(들)에 맞는 모든 자리(찬 자리 포함), free = 그중 남은 빈자리 하나. order = 단서 보이는 순서(같은 값이면 위의 단서 먼저) */
+function nextStep(clues, at, board, roles, order = clues.map((_, i) => i)) {
+  const taken = new Set(Object.values(at));
+  const pos = i => order.indexOf(i);
+  let best = null;
+  for (const [ri, r] of roles.entries()) {
+    if (at[r]) continue;
+    const usable = clues.map((_, i) => i).filter(i => {
+      const c = clues[i];
+      if (c.a !== r && c.b !== r) return false;
+      return c.b === undefined || at[c.a === r ? c.b : c.a] !== undefined;
+    });
+    const fits = (i, s) => holds(clues[i], { ...at, [r]: s }, board) === true;
+    const consider = is => {
+      const match = board.seats.filter(s => is.every(i => fits(i, s)));
+      const free = match.filter(s => !taken.has(s));
+      if (free.length !== 1) return false;
+      const kind = !is.length ? 'last' : is.length > 1 ? 'combo' : match.length > 1 ? 'elim' : clues[is[0]].b === undefined ? 'direct' : 'relation';
+      const rank = [KIND_RANK[kind], is.length, Math.min(...is.map(pos)), ri];
+      if (!best || less(rank, best.rank)) best = { role: r, clues: [...is].sort((x, y) => pos(x) - pos(y)), match, free: free[0], kind, rank };
+      return true;
+    };
+    let hit = false;
+    for (const i of usable) hit = consider([i]) || hit;
+    if (hit) continue;
+    for (let x = 0; x < usable.length; x++) for (let y = x + 1; y < usable.length; y++) hit = consider([usable[x], usable[y]]) || hit;
+    if (!hit && usable.length > 2) hit = consider(usable);
+    if (!hit && !usable.length) consider([]); // 단서가 없는 사람: 빈자리가 하나만 남았을 때
+  }
+  if (!best) return null;
+  const { rank, ...step } = best;
+  return step;
+}
+
+/** tutorialVariant(ep, board) → 첫 편 안내판에 쓸 변형 번호: 확실한 단서로 시작해서
+ *  '앉은 사람 기준 관계'와 '찬 자리 빼기'를 (되도록 이 순서로) 한 번씩 겪고, 여러 단서를 겹쳐야 하는 걸음은 없는 판 (같으면 앞 번호) */
+function tutorialVariant(ep, board) {
+  const roles = ep.cast.map(c => c.role);
+  let best = 0, top = -Infinity;
+  ep.variants.forEach((v, i) => {
+    const at = {}, kinds = [];
+    for (let st; (st = nextStep(v.clues, at, board, roles));) { kinds.push(st.kind); at[st.role] = st.free; }
+    const rel = kinds.indexOf('relation'), elim = kinds.indexOf('elim');
+    const score = (kinds[0] === 'direct' ? 1 : 0) + (rel >= 0 ? 3 : 0) + (elim >= 0 ? 2 : 0) + (rel >= 0 && rel < elim ? 1 : 0) - 3 * kinds.filter(k => k === 'combo').length;
+    if (score > top) { top = score; best = i; }
+  });
+  return best;
+}
+
+/** culpritSeats(culpritClues, at, board) → 단서마다 그 조건에 맞는 (사람이 앉은) 자리 목록 */
+function culpritSeats(culprit, at, board) {
+  const seated = Object.values(at);
+  return culprit.map(c => seated.filter(s => holdsAt(c, s, at, board)));
+}
+
 // ── main.js ──
 // 화면·입력·연출. 규칙은 state.js, 퍼즐 데이터는 data.js(빌드 생성), 단서 문장은 generate.renderVariant.
 // 시험판(art/seat/spike.src.html)의 화면 흐름을 그대로 옮기고 판 모양(rows×cols)·큰 판 확대만 일반화했다.
