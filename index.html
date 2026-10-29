@@ -507,6 +507,7 @@ html.notimer .timer { display: none; }
 .case.locked { cursor: default; filter: grayscale(.7) brightness(.75); }
 .case.locked .pic::before { filter: brightness(.5); }
 @media (max-width: 760px) { .caselist .cases { grid-template-columns: minmax(0, 1fr); gap: 8px; } }
+.case.next { cursor: default; background: rgb(0 0 0 / .14); border-style: dashed; } .case.next .pic { box-shadow: inset 0 0 0 2px rgb(255 243 220 / .15); } .case.next .pic::before { display: none; } .case.next .txt b { opacity: .5; }
 </style>
 </head>
 <body>
@@ -526,10 +527,10 @@ html.notimer .timer { display: none; }
   <div class="layout">
     <section class="field">
       <div class="stage" id="stage"><div class="room" id="room"><div class="beds" id="beds"></div></div></div>
-      <div class="nudgebox" id="nudgeBox" hidden aria-live="polite"></div>
       <div class="zoombar" id="zoombar"><button type="button" id="zoomOut" aria-label="판 작게">－</button><button type="button" id="zoomIn" aria-label="판 크게">＋</button></div>
       <div class="trayhead"><b id="trayLeft"></b><small>얼굴을 고른 뒤 자리를 눌러 앉혀요 · 틀리면 송편 −1 · 단서를 누르면 그 사람이 반짝여요</small></div>
       <div class="tray" id="tray"></div>
+      <div class="nudgebox" id="nudgeBox" hidden aria-live="polite"></div> <!-- 안내·실마리는 얼굴 칸 아래: 판 바로 밑에 두면 얼굴 칸이 화면 밖으로 밀림 -->
       <p class="casenote" id="caseNote"></p>
     </section>
 
@@ -1301,12 +1302,13 @@ function boardCloud() {
 // 사건 수첩 = 증거품 진열장(접히는 진열장): 장소마다 최근에 푼 증거품 6칸만, '더 보기'로 여러 단 펼침.
 // 못 푼 칸 ?는 장소마다 다음 한 칸만(전체 편수는 드러내지 않음). 증거품을 누르면 옆(폰은 위) 카드에 그 사건과 다시 하기
 const SHELF_ROW = 6;
-// 사건 목록: 50편씩 묶어 보고 아무 편이나 골라 들어간다 — 깬 편은 증거품·남긴 송편·최고 기록, 지금 사건은 금빛, 안 열린 편은 자물쇠
+// 사건 목록: 50편씩 묶어 보고 푼 편을 골라 다시 하거나 지금 사건으로 — 깬 편은 증거품·남긴 송편·최고 기록, 지금 사건은 금빛.
+// 앞으로 몇 편이 더 있는지는 보이지 않게(사용자): 묶음 칩은 지금 사건이 있는 묶음까지, 지금 사건 뒤로는 '?' 한 칸만
 const GROUP = 50;
 function renderList(ci) {
-  const n = EPISODES.length, g = ui.group ?? Math.floor(Math.max(ci, 0) / GROUP);
+  const n = ci >= 0 ? ci + 1 : EPISODES.length, g = Math.min(ui.group ?? Infinity, Math.floor((n - 1) / GROUP)); // n = 보여 줄 편 수(지금 사건까지)
   const chips = Array.from({ length: Math.ceil(n / GROUP) }, (_, k) => `<button type="button" class="chip${k === g ? ' on' : ''}" data-group="${k}" aria-pressed="${k === g}">${k * GROUP + 1}–${Math.min(n, (k + 1) * GROUP)}</button>`).join('');
-  const cells = EPISODES.slice(g * GROUP, (g + 1) * GROUP).map((ep, k) => {
+  const cells = EPISODES.slice(g * GROUP, Math.min(n, (g + 1) * GROUP)).map((ep, k) => {
     const i = g * GROUP + k, r = rec[ep.id], now = i === ci, st = STAGES[ep.stage];
     const kind = r ? 'done' : now ? 'now' : 'locked', act = r ? `data-play="${ep.id}"` : now ? 'data-home' : 'data-locked';
     const pic = r ? (ep.key.img ? `<img src="${img(ep.key.img)}" alt="">` : `<span class="emo">${ep.key.icon}</span>`) : now ? '<b>?</b>' : '<b>🔒</b>';
@@ -1314,7 +1316,7 @@ function renderList(ci) {
     const sub = r ? `<span class="got" aria-label="남긴 송편 ${r.stars}개">${left}</span><span>⏱ ${mmss(r.best)}</span>` : now ? '<span class="nowtag">지금 사건</span>' : '<span>앞 사건을 풀면 열려요</span>';
     return `<button type="button" class="case ${kind}" ${act} style="--st:${st.tint};--bg:url('${img(st.bg)}')" aria-label="${i + 1}화 ${ep.title}"><span class="pic">${pic}</span>
       <span class="txt"><small>${i + 1}화 · ${st.name}</small><b>${ep.title}</b><span class="rec">${sub}</span></span></button>`;
-  }).join('');
+  }).join('') + (ci >= 0 && (g + 1) * GROUP >= n ? '<span class="case next" aria-label="다음 사건"><span class="pic"><b>?</b></span><span class="txt"><b>?</b></span></span>' : '');
   return `<button type="button" class="fback" data-home aria-label="지금 사건으로 돌아가기">←</button><section class="book caselist"><div class="bookhead"><h2>사건 목록</h2><span>푼 사건 ${Object.keys(rec).length}개</span></div>
     ${ci >= 0 ? `<button type="button" class="nowbtn" data-home>지금 사건 ${ci + 1}화로 →</button>` : ''}
     <div class="chips" role="group" aria-label="편 묶음">${chips}</div><div class="cases">${cells}</div></section>`;
