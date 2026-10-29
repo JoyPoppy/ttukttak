@@ -429,6 +429,40 @@ html.notimer .timer { display: none; }
 .casenote b { color: var(--gold); }
 .casenote strong { color: var(--cream); font-weight: 800; }
 @media (max-width: 760px) { .casenote { font-size: 13.5px; padding: 9px 12px; } }
+/* 진열장 A(사용자 선택, 2026-10-29): 칸마다 그 장소의 배경 그림을 작은 액자처럼 깔고, 증거품은 한가운데 크게 — 선반 판은 장소색 */
+.shelf { padding: 10px 12px 14px; border-radius: 16px; background: linear-gradient(180deg, color-mix(in srgb, var(--st) 55%, transparent), color-mix(in srgb, var(--st) 20%, transparent)); border: 1px solid rgb(255 243 220 / .14); }
+.shelf header { margin-bottom: 8px; }
+.shelfrow { min-height: 0; padding: 0; gap: 8px; }
+.shelfrow::after { display: none; }
+.shelfrow + .shelfrow, .shelf .extra > .shelfrow:first-child { margin-top: 8px; }
+.shelf .extra { padding-bottom: 0; margin-bottom: 0; }
+.slot { height: auto; aspect-ratio: 1; place-items: center; border-radius: 12px; }
+/* 배경은 방 전체를 줄이지 않고 크게 확대해 안쪽 벽 쪽만 — 물건과 비율이 맞게 (흐림은 사용자가 싫어함, 조금 어둡게만) */
+.slot, .shelfcard .big { overflow: hidden; isolation: isolate; }
+.slot::before, .shelfcard .big::before { content: ''; position: absolute; inset: -6%; z-index: -1; background: var(--bg) 50% 4% / 330% auto; filter: brightness(.9); }
+.slot::after, .shelfcard .big::after { content: ''; position: absolute; inset: 0; z-index: -1; border-radius: inherit; pointer-events: none; background: radial-gradient(circle at 50% 56%, rgb(255 244 214 / .32), rgb(255 244 214 / 0) 48%); box-shadow: inset 0 0 0 2px rgb(255 243 220 / .22), inset 0 0 16px rgb(0 0 0 / .4); }
+.slot .it { position: relative; width: 74%; height: 74%; object-fit: contain; margin: 0; filter: drop-shadow(0 0 5px rgb(255 238 190 / .85)) drop-shadow(0 0 2px rgb(255 248 225 / .9)) drop-shadow(0 6px 5px rgb(0 0 0 / .4)); } /* 물건 둘레가 살짝 빛나게 */
+.slot.sel .it { filter: drop-shadow(0 0 9px rgb(255 214 120 / .95)) drop-shadow(0 0 3px rgb(255 248 225 / .95)) drop-shadow(0 6px 5px rgb(0 0 0 / .4)); }
+.slot .emo { position: relative; margin: 0; }
+.slot { box-shadow: 0 4px 10px rgb(0 0 0 / .25); } .slot.sel { box-shadow: 0 0 0 3px var(--gold), 0 0 14px rgb(255 207 110 / .55); }
+.slot.empty::before { filter: grayscale(.5) brightness(.6); }
+.slot.empty b { position: relative; width: auto; aspect-ratio: auto; border: 0; margin: 0; color: var(--cream); text-shadow: 0 2px 4px rgb(0 0 0 / .6); }
+.slot i { z-index: 2; top: 4px; }
+.shelfcard .big { position: relative; border-radius: 22px; background: none; }
+.shelfcard .big .it { position: relative; width: 78%; height: 78%; object-fit: contain; filter: drop-shadow(0 0 9px rgb(255 238 190 / .85)) drop-shadow(0 0 3px rgb(255 248 225 / .9)) drop-shadow(0 8px 8px rgb(0 0 0 / .35)); }
+.shelfcard .big .emo { position: relative; }
+@media (max-width: 760px) {
+  .shelf { padding: 8px 8px 10px; } .shelfrow { gap: 5px; }
+  .slot { height: auto; border-radius: 9px; } .slot .it { width: 76%; height: 76%; }
+  .slot i { display: none; } /* 폰: 칸이 작아 화 번호표가 물건을 가림 — 위 카드에 화 번호가 있음 */
+  .shelfcard .big { border-radius: 14px; } .shelfcard .big .it { width: 80%; height: 80%; }
+}
+/* 진열장 뒤로가기 (설정 버튼과 짝, 왼쪽 위) — 내려서 위 줄이 안 보일 때만 */
+.fback { position: fixed; z-index: 15; top: max(12px, env(safe-area-inset-top, 0px)); left: max(12px, env(safe-area-inset-left, 0px)); width: 42px; height: 42px; border-radius: 50%; border: 1.5px solid rgb(255 255 255 / .22); background: rgb(20 27 46 / .85); color: var(--ink); font: 600 20px/1 var(--font-ui); cursor: pointer; display: grid; place-items: center; box-shadow: 0 6px 16px rgb(0 0 0 / .35); backdrop-filter: blur(4px); opacity: 0; pointer-events: none; transform: translateY(-6px); transition: opacity .2s, transform .2s; }
+.fback.on { opacity: 1; pointer-events: auto; transform: none; }
+.fback:hover { background: var(--night-2); }
+.fback:focus-visible { outline: 3px solid var(--gold); outline-offset: 2px; }
+@media (prefers-reduced-motion: reduce) { .fback { transition: none; } }
 </style>
 </head>
 <body>
@@ -1157,7 +1191,8 @@ function boardCloud() {
 const SHELF_ROW = 6;
 function renderBook(done, bar) {
   const solved = new Set(done.map(ep => ep.id)), no = ep => EPISODES.indexOf(ep) + 1;
-  const thing = ep => ep.key.img ? `<img src="${img(ep.key.img)}" alt="">` : `<span class="emo">${ep.key.icon}</span>`;
+  const thing = ep => ep.key.img ? `<img class="it" src="${img(ep.key.img)}" alt="">` : `<span class="emo">${ep.key.icon}</span>`;
+  const scene = s => `--st:${STAGES[s].tint};--bg:url('${img(STAGES[s].bg)}')`; // 칸 바탕은 그 장소 배경 그림 — 어디 물건인지 한눈에
   const stageIds = [...new Set(EPISODES.map(ep => ep.stage))];
   const visited = stageIds.filter(s => EPISODES.some(ep => ep.stage === s && solved.has(ep.id)));
   if (!solved.has(ui.shelf)) ui.shelf = done[done.length - 1].id; // 처음엔 가장 최근에 푼 사건
@@ -1170,15 +1205,16 @@ function renderBook(done, bar) {
     // 첫 단 아래 단들은 .extra 로 묶어 '더 보기'에서 아래로 펼쳐지게 (--i = 내려앉는 차례)
     const rows = [];
     for (let i = 0; i < cells.length; i += SHELF_ROW) rows.push(`<div class="shelfrow">${cells.slice(i, i + SHELF_ROW).map((c, k) => c.replace('class="slot', `style="--i:${i / SHELF_ROW + k}" class="slot`)).join('')}</div>`);
-    return `<section class="shelf" style="--st:${STAGES[s].tint}"><header><b>${STAGES[s].name}</b><small>${items.length}개</small>
+    return `<section class="shelf" style="${scene(s)}"><header><b>${STAGES[s].name}</b><small>${items.length}개</small>
       ${rest > 0 ? `<button type="button" class="more" data-more="${s}" aria-expanded="${open}">${open ? '접기' : `＋${rest} 더 보기`}</button>` : ''}</header>${rows[0] || ''}${rows.length > 1 ? `<div class="extra">${rows.slice(1).join('')}</div>` : ''}</section>`;
   };
   const ep = EPISODES.find(e => e.id === ui.shelf), r = rec[ep.id]; // 범인은 적지 않음(다시 할 사람의 재미) — 대신 사건 한 줄
-  const card = `<aside class="shelfcard" style="--st:${STAGES[ep.stage].tint}" aria-live="polite"><span class="big">${thing(ep)}</span><small>${no(ep)}화 · ${STAGES[ep.stage].name}</small><h3>${ep.title}</h3>
+  const card = `<aside class="shelfcard" style="${scene(ep.stage)}" aria-live="polite"><span class="big">${thing(ep)}</span><small>${no(ep)}화 · ${STAGES[ep.stage].name}</small><h3>${ep.title}</h3>
     <p class="hook">${ep.hook}</p><p class="rec"><span class="stars">${starsTxt(r.stars)}</span> 최고 ${mmss(r.best)}</p>
     <button type="button" class="again" data-play="${ep.id}">다시 하기</button></aside>`;
   const locked = stageIds.filter(s => !visited.includes(s));
-  return `<section class="book">${bar}<div class="bookhead"><h2>증거품 진열장</h2><span>모은 증거품 ${done.length}개</span></div>
+  // 한참 내려도 돌아갈 수 있게: 내리면 왼쪽 위에 설정 버튼처럼 뜨는 뒤로가기
+  return `<button type="button" class="fback${scrollY > 140 ? ' on' : ''}" data-book aria-label="지금 사건으로 돌아가기">←</button><section class="book">${bar}<div class="bookhead"><h2>증거품 진열장</h2><span>모은 증거품 ${done.length}개</span></div>
     <div class="bookbody"><div class="shelves">${visited.map(shelf).join('')}
       ${locked.length ? `<p class="locked"><b>아직 못 가 본 곳 ${locked.length}곳</b>${locked.map(s => `<span>${STAGES[s].name}</span>`).join('')}</p>` : ''}</div>${card}</div></section>`;
 }
@@ -1550,7 +1586,7 @@ document.addEventListener('click', e => {
   else if (b) tapBed(b.dataset.bed);
   else if (c) blink(named(variant().clues[+c.dataset.clue]));
   else if (su) blink(named(variant().culprit[+su.dataset.sus]));
-  else if (t.closest('[data-book]')) { ui.book = !ui.book; renderHome(); window.scrollTo({ top: 0 }); }
+  else if (t.closest('[data-book]')) { ui.book = !ui.book; renderHome(); window.scrollTo({ top: 0 }); fback(); }
   else if (t.closest('[data-shelf]')) { ui.shelf = t.closest('[data-shelf]').dataset.shelf; renderHome(); $(`[data-shelf="${ui.shelf}"]`)?.focus({ preventScroll: true }); }
   else if (t.closest('[data-more]')) toggleShelf(t.closest('[data-more]').dataset.more);
   else if (t.closest('[data-ttuk]')) ttuk(t.closest('[data-ttuk]'));
@@ -1610,6 +1646,9 @@ document.documentElement.style.setProperty('--memo-paper', `url(${img('memo_pape
 $('#hint').innerHTML = `<img class="tw" src="${img('tweezers.webp')}" alt="">족집게 <small>${nyang(30)}</small>`;
 applySettings();
 showHome();
+// 진열장 뒤로가기: 위 줄(← 지금 사건)이 화면 밖으로 나가면 왼쪽 위에 띄운다
+function fback() { document.querySelector('.fback')?.classList.toggle('on', scrollY > 140); }
+addEventListener('scroll', fback, { passive: true });
 </script>
 </body>
 </html>
