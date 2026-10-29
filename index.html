@@ -483,6 +483,30 @@ html.notimer .timer { display: none; }
 .fback:focus-visible { outline: 3px solid var(--gold); outline-offset: 2px; }
 .book .bookhead { min-height: 42px; align-items: center; padding: 0 54px 0 56px; }
 @media (max-width: 760px) { .book .shelfcard { top: 62px; } } /* 폰: 위에 붙는 카드가 뒤로가기·설정 버튼 밑에 깔리지 않게 */
+/* 사건 목록: 지금 사건 버튼 · 50편 묶음 칩 · 편 칸(증거품·남긴 송편·최고 기록 / 지금 사건 금빛 / 자물쇠) */
+.caselist .nowbtn { justify-self: start; border: 0; border-radius: 99px; padding: 12px 20px; background: var(--gold); color: #2a1d08; font: 400 17px/1 var(--font-head); cursor: pointer; box-shadow: 0 6px 16px rgb(0 0 0 / .3); }
+.caselist .chips { display: flex; flex-wrap: wrap; gap: 6px; scroll-margin-top: 64px; }
+.caselist .chip { border: 1.5px solid rgb(255 243 220 / .35); background: rgb(0 0 0 / .18); color: var(--cream); border-radius: 99px; padding: 7px 12px; font: 600 13px/1 var(--font-ui); cursor: pointer; }
+.caselist .chip.on { background: var(--cream); color: #3a2414; border-color: var(--cream); }
+.caselist .cases { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 10px; }
+.case { display: grid; grid-template-columns: 64px 1fr; gap: 12px; align-items: center; padding: 8px 12px 8px 8px; border: 1px solid rgb(255 243 220 / .16); border-radius: 14px; background: linear-gradient(180deg, color-mix(in srgb, var(--st) 50%, transparent), color-mix(in srgb, var(--st) 22%, transparent)); color: var(--cream); text-align: left; cursor: pointer; font: inherit; }
+.case:hover { border-color: rgb(255 243 220 / .45); }
+.case:focus-visible { outline: 3px solid var(--gold); outline-offset: 2px; }
+.case .pic { position: relative; isolation: isolate; overflow: hidden; width: 64px; height: 64px; border-radius: 10px; display: grid; place-items: center; box-shadow: inset 0 0 0 2px rgb(255 243 220 / .2); }
+.case .pic::before { content: ''; position: absolute; inset: -6%; z-index: -1; background: var(--bg) 50% 4% / 330% auto; filter: brightness(.9); } /* 진열장 칸과 같은 장소 액자 */
+.case .pic img { width: 76%; height: 76%; object-fit: contain; filter: drop-shadow(0 0 4px rgb(255 238 190 / .8)) drop-shadow(0 4px 3px rgb(0 0 0 / .4)); }
+.case .pic .emo { font-size: 34px; }
+.case .pic b { font: 800 24px/1 var(--font-title); color: var(--cream); text-shadow: 0 2px 4px rgb(0 0 0 / .6); }
+.case .txt { display: grid; gap: 3px; min-width: 0; }
+.case .txt small { font: 600 12px/1.2 var(--font-ui); opacity: .8; }
+.case .txt > b { font: 800 16px/1.25 var(--font-title); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.case .rec { display: flex; align-items: center; gap: 8px; font: 600 12.5px/1 var(--font-ui); opacity: .9; }
+.case .got { display: inline-flex; gap: 1px; } .case .got img { width: 20px; height: 18px; object-fit: contain; } .case .got img.gone { opacity: .25; filter: grayscale(1) brightness(1.4); }
+.case.now { border: 2px solid var(--gold); box-shadow: 0 0 14px rgb(255 207 110 / .45); }
+.case .nowtag { padding: 3px 8px; border-radius: 99px; background: var(--gold); color: #2a1d08; }
+.case.locked { cursor: default; filter: grayscale(.7) brightness(.75); }
+.case.locked .pic::before { filter: brightness(.5); }
+@media (max-width: 760px) { .caselist .cases { grid-template-columns: minmax(0, 1fr); gap: 8px; } }
 </style>
 </head>
 <body>
@@ -1209,7 +1233,7 @@ const buzz = () => { if (FX_READY && settings.vibe && navigator.vibrate) navigat
 
 // ---------- 지금 판 ----------
 let EP, RUN, BOARD, STAGE, NAMES = {}, TEXT = { clues: [], culprit: [] }, clueOrder = [], trayOrder = [];
-const ui = { book: false, shelf: null, open: new Set(), pick: null, lost: null, flash: null, shown: false, tick: 0, run: 0, skip: false, zoom: 1, nudge: null, tut: false };
+const ui = { list: false, group: null, book: false, shelf: null, open: new Set(), pick: null, lost: null, flash: null, shown: false, tick: 0, run: 0, skip: false, zoom: 1, nudge: null, tut: false };
 const variant = () => EP.variants[RUN.v];
 const who = role => ({ name: NAMES[role], face: EP.cast.find(c => c.role === role).char });
 const nyang = n => `<img class="yeop" src="${img('yeopjeon.webp')}" alt="">${n}냥`; // 코인 = 엽전
@@ -1230,8 +1254,10 @@ function renderHome() {
   const done = EPISODES.filter(ep => rec[ep.id]);
   const ci = EPISODES.findIndex(ep => !rec[ep.id] && isOpen(ep.id, ORDER, rec)), cur = EPISODES[ci];
   const bar = `<div class="ptop"><b class="pbrand">뚝딱 추리단</b><span class="pill" id="homeCoins">${nyang(wallet.coins)}</span>`
+    + (done.length ? `<button type="button" class="pill plist" data-list aria-label="사건 목록">📜 <span class="lbl">사건 목록</span></button>` : '')
     + (ui.book ? '<button type="button" class="pill pbook" data-book>← 지금 사건</button>'
       : done.length ? `<button type="button" class="pill pbook" data-book aria-label="사건 수첩, 해결 ${done.length}건">📒 <span class="lbl">사건 수첩 </span><b>${done.length}</b></button>` : '') + '</div>';
+  if (ui.list && done.length) { posterMode(cur ? STAGES[cur.stage].tint : '#2a3048'); $('#eps').innerHTML = renderList(ci); return; }
   if (ui.book && done.length) { posterMode(cur ? STAGES[cur.stage].tint : '#2a3048'); $('#eps').innerHTML = renderBook(done); return; } // 수첩도 지금 사건 장소색 그대로
   if (!cur) { posterMode('#2a3048'); $('#eps').innerHTML = `<article class="poster">${bar}<div class="pmain"><h2 class="phook xl">모든 사건을 해결했어요!</h2><p class="plead">다음 이야기도 곧 찾아와요.</p></div></article>`; return; }
   const st = STAGES[cur.stage]; // 다음 사건 예고는 홈에서 빼고(지금 사건에 집중), 진실 화면 끝에서만. 난이도는 용의자 칸 오른쪽 위
@@ -1275,6 +1301,24 @@ function boardCloud() {
 // 사건 수첩 = 증거품 진열장(접히는 진열장): 장소마다 최근에 푼 증거품 6칸만, '더 보기'로 여러 단 펼침.
 // 못 푼 칸 ?는 장소마다 다음 한 칸만(전체 편수는 드러내지 않음). 증거품을 누르면 옆(폰은 위) 카드에 그 사건과 다시 하기
 const SHELF_ROW = 6;
+// 사건 목록: 50편씩 묶어 보고 아무 편이나 골라 들어간다 — 깬 편은 증거품·남긴 송편·최고 기록, 지금 사건은 금빛, 안 열린 편은 자물쇠
+const GROUP = 50;
+function renderList(ci) {
+  const n = EPISODES.length, g = ui.group ?? Math.floor(Math.max(ci, 0) / GROUP);
+  const chips = Array.from({ length: Math.ceil(n / GROUP) }, (_, k) => `<button type="button" class="chip${k === g ? ' on' : ''}" data-group="${k}" aria-pressed="${k === g}">${k * GROUP + 1}–${Math.min(n, (k + 1) * GROUP)}</button>`).join('');
+  const cells = EPISODES.slice(g * GROUP, (g + 1) * GROUP).map((ep, k) => {
+    const i = g * GROUP + k, r = rec[ep.id], now = i === ci, st = STAGES[ep.stage];
+    const kind = r ? 'done' : now ? 'now' : 'locked', act = r ? `data-play="${ep.id}"` : now ? 'data-home' : 'data-locked';
+    const pic = r ? (ep.key.img ? `<img src="${img(ep.key.img)}" alt="">` : `<span class="emo">${ep.key.icon}</span>`) : now ? '<b>?</b>' : '<b>🔒</b>';
+    const left = r ? CAKES.map((f, j) => `<img class="${j < r.stars ? '' : 'gone'}" src="${img(f)}" alt="">`).join('') : '';
+    const sub = r ? `<span class="got" aria-label="남긴 송편 ${r.stars}개">${left}</span><span>⏱ ${mmss(r.best)}</span>` : now ? '<span class="nowtag">지금 사건</span>' : '<span>앞 사건을 풀면 열려요</span>';
+    return `<button type="button" class="case ${kind}" ${act} style="--st:${st.tint};--bg:url('${img(st.bg)}')" aria-label="${i + 1}화 ${ep.title}"><span class="pic">${pic}</span>
+      <span class="txt"><small>${i + 1}화 · ${st.name}</small><b>${ep.title}</b><span class="rec">${sub}</span></span></button>`;
+  }).join('');
+  return `<button type="button" class="fback" data-home aria-label="지금 사건으로 돌아가기">←</button><section class="book caselist"><div class="bookhead"><h2>사건 목록</h2><span>푼 사건 ${Object.keys(rec).length}개</span></div>
+    ${ci >= 0 ? `<button type="button" class="nowbtn" data-home>지금 사건 ${ci + 1}화로 →</button>` : ''}
+    <div class="chips" role="group" aria-label="편 묶음">${chips}</div><div class="cases">${cells}</div></section>`;
+}
 function renderBook(done) {
   const solved = new Set(done.map(ep => ep.id)), no = ep => EPISODES.indexOf(ep) + 1;
   const thing = ep => ep.key.img ? `<img class="it" src="${img(ep.key.img)}" alt="">` : `<span class="emo">${ep.key.icon}</span>`;
@@ -1695,7 +1739,11 @@ document.addEventListener('click', e => {
   else if (b) tapBed(b.dataset.bed);
   else if (c) blink(named(variant().clues[+c.dataset.clue]));
   else if (su) blink(named(variant().culprit[+su.dataset.sus]));
-  else if (t.closest('[data-book]')) { ui.book = !ui.book; renderHome(); window.scrollTo({ top: 0 }); }
+  else if (t.closest('[data-book]')) { ui.book = !ui.book; ui.list = false; renderHome(); window.scrollTo({ top: 0 }); }
+  else if (t.closest('[data-list]')) { ui.list = true; ui.book = false; ui.group = null; renderHome(); window.scrollTo({ top: 0 }); }
+  else if (t.closest('[data-home]')) { ui.list = false; ui.book = false; renderHome(); window.scrollTo({ top: 0 }); }
+  else if (t.closest('[data-group]')) { ui.group = +t.closest('[data-group]').dataset.group; renderHome(); $('.chips')?.scrollIntoView({ block: 'start', behavior: isCalm() ? 'auto' : 'smooth' }); }
+  else if (t.closest('[data-locked]')) toast('앞 사건을 먼저 풀어야 열려요');
   else if (t.closest('[data-shelf]')) { ui.shelf = t.closest('[data-shelf]').dataset.shelf; renderHome(); $(`[data-shelf="${ui.shelf}"]`)?.focus({ preventScroll: true }); }
   else if (t.closest('[data-more]')) toggleShelf(t.closest('[data-more]').dataset.more);
   else if (t.closest('[data-ttuk]')) ttuk(t.closest('[data-ttuk]'));
