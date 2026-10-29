@@ -349,7 +349,7 @@ html.notimer .timer { display: none; }
 /* 사건 현장 A: 장소색 바탕(body.poster-mode) 위에 윗줄 한 줄 + 판·용의자(왼) + 단서 메모(오) */
 .playwrap { display: grid; gap: 14px; }
 .playwrap[hidden] { display: none; }
-.playbar { display: flex; align-items: center; gap: 8px 12px; flex-wrap: wrap; color: var(--cream); padding-right: 54px; }
+.playbar { display: flex; align-items: center; gap: 8px 12px; flex-wrap: wrap; color: var(--cream); padding: 0 54px 0 56px; min-height: 42px; } /* 왼쪽 위 뒤로가기(.fback)·오른쪽 위 설정과 짝 */
 .playbar .backlink { color: var(--cream); opacity: .8; font: 600 14px/1 var(--font-ui); }
 .playbar .backlink:hover { opacity: 1; color: var(--cream); }
 .playbar .ep { font: 600 13px/1 var(--font-ui); color: var(--cream); opacity: .8; letter-spacing: 0; }
@@ -370,7 +370,7 @@ html.notimer .timer { display: none; }
 .poster-mode .chip .face { width: 34px; height: 34px; border-color: var(--cream); }
 .poster-mode .chip.picked { border-color: var(--gold); background: rgb(255 207 110 / .22); box-shadow: 0 0 0 3px rgb(255 207 110 / .25); }
 .poster-mode .chip.used { display: none; }
-@media (max-width: 760px) { .playbar h1 { font-size: 21px; flex-basis: 100%; order: 3; } .playbar .sp { display: none; } .playbar .hud { order: 4; } }
+@media (max-width: 760px) { .playbar h1 { font-size: 21px; flex-basis: 100%; order: 3; } .playbar .sp { display: none; } .playbar .hud { order: 4; margin: 0 -54px 0 -56px; } } /* 폰: 뒤로가기 옆은 화 번호·제목만, 호롱불 줄은 왼쪽 끝부터 */
 
 /* 판 구름: 그림을 불러오는 동안 판을 덮었다가(뚝딱!) 다 오면 뭉게 피어오르며 사라짐 */
 .stage .room { transition: transform .8s cubic-bezier(.3, .7, .2, 1), opacity .4s ease; }
@@ -475,7 +475,7 @@ html.notimer .timer { display: none; }
   <!-- 플레이 (사건 현장) -->
   <div class="playwrap" id="play" hidden>
   <header class="playbar">
-    <button class="backlink" id="back" type="button">← 목록</button>
+    <button class="fback" id="back" type="button" aria-label="목록으로 돌아가기">←</button>
     <span class="ep" id="epNo"></span><h1 id="epTitle"></h1><span class="sp"></span>
     <div class="hud"><span class="hearts" id="hearts" aria-label="남은 호롱불"></span><span class="coins" id="coins" aria-label="엽전"></span><span class="timer" id="timer" aria-label="걸린 시간">0:00</span><button class="btn hint" id="nudge" type="button" aria-label="생각의 실마리: 다음에 볼 단서와 좁히는 법을 알려 줘요 (무료)">💡 실마리 <small>무료</small></button><button class="btn hint" id="hint" type="button" aria-label="족집게: 한 명을 콕 집어 앉혀 줘요 (30냥)">족집게</button></div>
   </header>
