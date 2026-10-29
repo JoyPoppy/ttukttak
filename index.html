@@ -457,12 +457,12 @@ html.notimer .timer { display: none; }
   .slot i { display: none; } /* 폰: 칸이 작아 화 번호표가 물건을 가림 — 위 카드에 화 번호가 있음 */
   .shelfcard .big { border-radius: 14px; } .shelfcard .big .it { width: 80%; height: 80%; }
 }
-/* 진열장 뒤로가기 (설정 버튼과 짝, 왼쪽 위) — 내려서 위 줄이 안 보일 때만 */
-.fback { position: fixed; z-index: 15; top: max(12px, env(safe-area-inset-top, 0px)); left: max(12px, env(safe-area-inset-left, 0px)); width: 42px; height: 42px; border-radius: 50%; border: 1.5px solid rgb(255 255 255 / .22); background: rgb(20 27 46 / .85); color: var(--ink); font: 600 20px/1 var(--font-ui); cursor: pointer; display: grid; place-items: center; box-shadow: 0 6px 16px rgb(0 0 0 / .35); backdrop-filter: blur(4px); opacity: 0; pointer-events: none; transform: translateY(-6px); transition: opacity .2s, transform .2s; }
-.fback.on { opacity: 1; pointer-events: auto; transform: none; }
+/* 진열장 뒤로가기 (설정 버튼과 짝, 왼쪽 위에 늘) — 제목은 그 옆에 */
+.fback { position: fixed; z-index: 15; top: max(12px, env(safe-area-inset-top, 0px)); left: max(12px, env(safe-area-inset-left, 0px)); width: 42px; height: 42px; border-radius: 50%; border: 1.5px solid rgb(255 255 255 / .22); background: rgb(20 27 46 / .85); color: var(--ink); font: 600 20px/1 var(--font-ui); cursor: pointer; display: grid; place-items: center; box-shadow: 0 6px 16px rgb(0 0 0 / .35); backdrop-filter: blur(4px); }
 .fback:hover { background: var(--night-2); }
 .fback:focus-visible { outline: 3px solid var(--gold); outline-offset: 2px; }
-@media (prefers-reduced-motion: reduce) { .fback { transition: none; } }
+.book .bookhead { min-height: 42px; align-items: center; padding: 0 54px 0 56px; }
+@media (max-width: 760px) { .book .shelfcard { top: 62px; } } /* 폰: 위에 붙는 카드가 뒤로가기·설정 버튼 밑에 깔리지 않게 */
 </style>
 </head>
 <body>
@@ -1146,7 +1146,7 @@ function renderHome() {
   const bar = `<div class="ptop"><b class="pbrand">뚝딱 추리단</b><span class="pill" id="homeCoins">${nyang(wallet.coins)}</span>`
     + (ui.book ? '<button type="button" class="pill pbook" data-book>← 지금 사건</button>'
       : done.length ? `<button type="button" class="pill pbook" data-book aria-label="사건 수첩, 해결 ${done.length}건">📒 <span class="lbl">사건 수첩 </span><b>${done.length}</b></button>` : '') + '</div>';
-  if (ui.book && done.length) { posterMode(cur ? STAGES[cur.stage].tint : '#2a3048'); $('#eps').innerHTML = renderBook(done, bar); return; } // 수첩도 지금 사건 장소색 그대로
+  if (ui.book && done.length) { posterMode(cur ? STAGES[cur.stage].tint : '#2a3048'); $('#eps').innerHTML = renderBook(done); return; } // 수첩도 지금 사건 장소색 그대로
   if (!cur) { posterMode('#2a3048'); $('#eps').innerHTML = `<article class="poster">${bar}<div class="pmain"><h2 class="phook xl">모든 사건을 해결했어요!</h2><p class="plead">다음 이야기도 곧 찾아와요.</p></div></article>`; return; }
   const st = STAGES[cur.stage]; // 다음 사건 예고는 홈에서 빼고(지금 사건에 집중), 진실 화면 끝에서만. 난이도는 용의자 칸 오른쪽 위
   posterMode(st.tint || '#b3372a');
@@ -1189,7 +1189,7 @@ function boardCloud() {
 // 사건 수첩 = 증거품 진열장(접히는 진열장): 장소마다 최근에 푼 증거품 6칸만, '더 보기'로 여러 단 펼침.
 // 못 푼 칸 ?는 장소마다 다음 한 칸만(전체 편수는 드러내지 않음). 증거품을 누르면 옆(폰은 위) 카드에 그 사건과 다시 하기
 const SHELF_ROW = 6;
-function renderBook(done, bar) {
+function renderBook(done) {
   const solved = new Set(done.map(ep => ep.id)), no = ep => EPISODES.indexOf(ep) + 1;
   const thing = ep => ep.key.img ? `<img class="it" src="${img(ep.key.img)}" alt="">` : `<span class="emo">${ep.key.icon}</span>`;
   const scene = s => `--st:${STAGES[s].tint};--bg:url('${img(STAGES[s].bg)}')`; // 칸 바탕은 그 장소 배경 그림 — 어디 물건인지 한눈에
@@ -1213,8 +1213,8 @@ function renderBook(done, bar) {
     <p class="hook">${ep.hook}</p><p class="rec"><span class="stars">${starsTxt(r.stars)}</span> 최고 ${mmss(r.best)}</p>
     <button type="button" class="again" data-play="${ep.id}">다시 하기</button></aside>`;
   const locked = stageIds.filter(s => !visited.includes(s));
-  // 한참 내려도 돌아갈 수 있게: 내리면 왼쪽 위에 설정 버튼처럼 뜨는 뒤로가기
-  return `<button type="button" class="fback${scrollY > 140 ? ' on' : ''}" data-book aria-label="지금 사건으로 돌아가기">←</button><section class="book">${bar}<div class="bookhead"><h2>증거품 진열장</h2><span>모은 증거품 ${done.length}개</span></div>
+  // 뒤로가기는 설정 버튼과 짝으로 왼쪽 위에 늘 — 한참 내려도 바로 돌아가게. 위 줄(엽전·지금 사건)은 수첩에선 뺌
+  return `<button type="button" class="fback" data-book aria-label="지금 사건으로 돌아가기">←</button><section class="book"><div class="bookhead"><h2>증거품 진열장</h2><span>모은 증거품 ${done.length}개</span></div>
     <div class="bookbody"><div class="shelves">${visited.map(shelf).join('')}
       ${locked.length ? `<p class="locked"><b>아직 못 가 본 곳 ${locked.length}곳</b>${locked.map(s => `<span>${STAGES[s].name}</span>`).join('')}</p>` : ''}</div>${card}</div></section>`;
 }
@@ -1586,7 +1586,7 @@ document.addEventListener('click', e => {
   else if (b) tapBed(b.dataset.bed);
   else if (c) blink(named(variant().clues[+c.dataset.clue]));
   else if (su) blink(named(variant().culprit[+su.dataset.sus]));
-  else if (t.closest('[data-book]')) { ui.book = !ui.book; renderHome(); window.scrollTo({ top: 0 }); fback(); }
+  else if (t.closest('[data-book]')) { ui.book = !ui.book; renderHome(); window.scrollTo({ top: 0 }); }
   else if (t.closest('[data-shelf]')) { ui.shelf = t.closest('[data-shelf]').dataset.shelf; renderHome(); $(`[data-shelf="${ui.shelf}"]`)?.focus({ preventScroll: true }); }
   else if (t.closest('[data-more]')) toggleShelf(t.closest('[data-more]').dataset.more);
   else if (t.closest('[data-ttuk]')) ttuk(t.closest('[data-ttuk]'));
@@ -1646,9 +1646,6 @@ document.documentElement.style.setProperty('--memo-paper', `url(${img('memo_pape
 $('#hint').innerHTML = `<img class="tw" src="${img('tweezers.webp')}" alt="">족집게 <small>${nyang(30)}</small>`;
 applySettings();
 showHome();
-// 진열장 뒤로가기: 위 줄(← 지금 사건)이 화면 밖으로 나가면 왼쪽 위에 띄운다
-function fback() { document.querySelector('.fback')?.classList.toggle('on', scrollY > 140); }
-addEventListener('scroll', fback, { passive: true });
 </script>
 </body>
 </html>
