@@ -1581,7 +1581,11 @@ function tapPerson(id) {
 // 앉히는 순간 바로 확인: 맞으면 고정, 틀리면 도깨비가 송편 하나를 먹고 그 인물이 한마디. 지목 단계면 누른 사람을 지목
 function tapBed(s) {
   if (needAccuse(RUN) && seatOf(s)) { doAccuse(seatOf(s), s); return; }
-  if (!ui.pick) { const r = seatOf(s); if (r && ui.told.includes(r)) sayScene(r, s); return; } // 앉은 사람을 누르면 그날 이야기를 다시 (지목 단계에선 누르는 게 지목)
+  if (!ui.pick) { // 앉은 사람을 누르면 그날 이야기를 다시, 떠 있을 때 또 누르면 닫기 (지목 단계에선 누르는 게 지목)
+    const r = seatOf(s), open = document.querySelector(`.bubble.tale[data-bed="${s}"]`);
+    if (open) open.remove(); else if (r && ui.told.includes(r)) sayScene(r, s);
+    return;
+  }
   const role = ui.pick; ui.pick = null;
   const res = place(RUN, role, s);
   if (res.ignored) { render(); return; }
@@ -1648,7 +1652,7 @@ function quip(el, p, lines, kind = '', ms = 2200) {
   document.querySelectorAll('.bubble').forEach(x => x.remove());
   const top = BOARD.rc(el.dataset.bed)[0] === 0;
   const bub = document.createElement('div');
-  bub.className = 'bubble' + (top ? ' down' : '') + (kind ? ` ${kind}` : '');
+  bub.className = 'bubble' + (top ? ' down' : '') + (kind ? ` ${kind}` : ''); bub.dataset.bed = el.dataset.bed;
   bub.innerHTML = `${pic(p)}<span>${kind === 'tale' ? '' : `<b>${p.name}</b> `}${pickOne(lines)}</span>`; // 이야기 줄은 이름으로 시작해서 이름표를 또 달지 않음
   bub.style.top = `${top ? el.offsetTop + el.offsetHeight : el.offsetTop}px`;
   $('#room').appendChild(bub);
