@@ -1581,7 +1581,7 @@ function tapPerson(id) {
 // 앉히는 순간 바로 확인: 맞으면 고정, 틀리면 도깨비가 송편 하나를 먹고 그 인물이 한마디. 지목 단계면 누른 사람을 지목
 function tapBed(s) {
   if (needAccuse(RUN) && seatOf(s)) { doAccuse(seatOf(s), s); return; }
-  if (!ui.pick) return;
+  if (!ui.pick) { const r = seatOf(s); if (r && ui.told.includes(r)) sayScene(r, s); return; } // 앉은 사람을 누르면 그날 이야기를 다시 (지목 단계에선 누르는 게 지목)
   const role = ui.pick; ui.pick = null;
   const res = place(RUN, role, s);
   if (res.ignored) { render(); return; }
@@ -1631,13 +1631,16 @@ function eatCake(i) {
 function tell(role, seat) {
   if (ui.told.includes(role) || !EP.cast.find(c => c.role === role)?.scene) return;
   ui.told.push(role); ui.toldAt = performance.now(); drawCase();
+  sayScene(role, seat);
+}
+function sayScene(role, seat) {
   const el = document.querySelector(`[data-bed="${seat}"]`);
   if (el) quip(el, who(role), [sceneLines(EP.cast, [role], NAMES)[0].text], 'tale', 3800);
 }
 function drawCase() {
   const has = EP.cast.some(c => c.scene), lines = sceneLines(EP.cast, ui.told, NAMES), folded = !ui.scenesOpen && !ui.shown;
   $('#caseNote').innerHTML = `<span class="tag">📜 사건</span> ${ui.caseIntro}` + (!has ? ''
-    : !lines.length ? '<small class="scenehint">맞게 앉힐 때마다 그날 그 사람이 뭘 하고 있었는지 여기 한 줄씩 적혀요.</small>'
+    : !lines.length ? '<small class="scenehint">맞게 앉힐 때마다 그날 그 사람이 뭘 하고 있었는지 여기 한 줄씩 적혀요. 앉은 사람을 누르면 다시 볼 수 있어요.</small>'
     : (lines.length > 1 && folded ? `<button type="button" class="scenetog" data-scenes>그날 이야기 ${lines.length}줄 ▾</button>` : '')
       + `<ol class="scenes${folded ? ' folded' : ''}">${lines.map(l => `<li>${pic(who(l.role))}<span>${l.text}</span></li>`).join('')}</ol>`);
 }
