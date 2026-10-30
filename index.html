@@ -510,7 +510,25 @@ html.notimer .timer { display: none; }
 .case.next { cursor: default; background: rgb(0 0 0 / .14); border-style: dashed; } .case.next .pic { box-shadow: inset 0 0 0 2px rgb(255 243 220 / .15); } .case.next .pic::before { display: none; } .case.next .txt b { opacity: .5; }
 /* 맞히면 펼쳐지는 그날 이야기: 판 위 말풍선(금빛, 3.8초) + 사건 칸에 앉힌 순서대로 쌓임 */
 .bubble { width: max-content; } /* 자리 위치와 상관없이 글 길이만큼 (max-width 까지) */
-.bubble.tale { max-width: 270px; background: #fff6d8; border: 2px solid var(--gold); animation: bubIn .25s ease both, bubOut .3s ease 3.5s forwards; }
+.bubble.tale { max-width: 270px; background: #fff6d8; border: 2px solid var(--gold); animation: bubIn .25s ease both; pointer-events: auto; cursor: pointer; } /* 시간으로 닫지 않음: 다음 행동(얼굴 고르기·판·말풍선 누르기)까지 */
+.bubble b.punch, .suscard .punch { display: block; margin-top: 3px; font-family: var(--font-body); font-weight: 700; color: #6b2a12; } /* 웃음 포인트(마지막 문장) */
+.tbtn { display: flex; align-items: center; gap: 6px; width: max-content; margin-top: 9px; padding: 8px 16px; border: 0; border-radius: 99px; font: 400 15.5px/1 var(--font-head); color: #fff; background: #3a2f6b; box-shadow: 0 3px 0 #241c48; cursor: pointer; }
+.tbtn.red { background: #b23a2a; box-shadow: 0 3px 0 #7d2418; }
+.tbtn:active { transform: translateY(2px); box-shadow: none; }
+.bed.talking::before { filter: drop-shadow(0 0 3px var(--gold)) drop-shadow(0 0 10px var(--gold)); }
+.bed .talk { position: absolute; z-index: 2; left: 2px; top: 2px; font-size: 12px; line-height: 1; padding: 3px 4px; background: #fff6d8; border-radius: 99px; box-shadow: 0 1px 3px rgb(0 0 0 / .35); pointer-events: none; } /* 이야기를 들은 사람: 누르면 다시 */
+.bed.talking .talk { display: none; }
+/* 범인 찾기: 얼굴 칸 자리에 누른 사람 카드 — 판을 가리지 않아 이 사람 저 사람 비교 */
+.tray.hunting { display: block; }
+.suscard { position: relative; display: flex; gap: 10px; align-items: flex-start; padding: 12px 34px 12px 12px; background: #fff6d8; border: 2px solid var(--gold); border-radius: 14px; color: var(--paper-ink); box-shadow: 0 6px 16px rgb(0 0 0 / .35); animation: bubIn .25s ease both; }
+.suscard .face { width: 44px; height: 44px; flex: none; }
+.suscard p { margin: 0; font: 400 14.5px/1.5 var(--font-body); }
+.suscard p b { color: #b23a2a; }
+.suscard .x { position: absolute; top: 4px; right: 4px; width: 30px; height: 30px; border: 0; border-radius: 50%; background: transparent; color: #a08a6c; font: 600 14px/1 var(--font-ui); cursor: pointer; }
+.suswait { margin: 0; padding: 14px; border: 2px dashed rgb(255 243 220 / .25); border-radius: 14px; color: var(--dim); font: 600 13.5px/1.4 var(--font-ui); text-align: center; }
+.accusing .bed.chosen .who .face { animation: none; box-shadow: 0 0 0 4px var(--gold), 0 0 0 7px #b23a2a, 0 0 16px #b23a2a; }
+.accusing .bed.chosen::before { filter: drop-shadow(0 0 4px #e0564a) drop-shadow(0 0 10px #e0564a); }
+html.calm .suscard { animation: none; }
 html.calm .bubble { animation: none !important; } /* 움직임 줄이기: 말풍선(이야기·틀렸을 때 한마디)은 효과만 끄고 보임 (JS 가 치움) */
 @media (prefers-reduced-motion: reduce) { .bubble { animation: none; } }
 .casenote .scenehint { display: block; margin-top: 6px; font-size: 12.5px; opacity: .7; }
@@ -541,7 +559,7 @@ html.calm .bubble { animation: none !important; } /* 움직임 줄이기: 말풍
     <section class="field">
       <div class="stage" id="stage"><div class="room" id="room"><div class="beds" id="beds"></div></div></div>
       <div class="zoombar" id="zoombar"><button type="button" id="zoomOut" aria-label="판 작게">－</button><button type="button" id="zoomIn" aria-label="판 크게">＋</button></div>
-      <div class="trayhead"><b id="trayLeft"></b><small>얼굴을 고른 뒤 자리를 눌러 앉혀요 · 틀리면 송편 −1 · 단서를 누르면 그 사람이 반짝여요</small></div>
+      <div class="trayhead"><b id="trayLeft"></b><small id="trayTip">얼굴을 고른 뒤 자리를 눌러 앉혀요 · 틀리면 송편 −1 · 단서를 누르면 그 사람이 반짝여요</small></div>
       <div class="tray" id="tray"></div>
       <div class="nudgebox" id="nudgeBox" hidden aria-live="polite"></div> <!-- 안내·실마리는 얼굴 칸 아래: 판 바로 밑에 두면 얼굴 칸이 화면 밖으로 밀림 -->
       <p class="casenote" id="caseNote"></p>
@@ -1130,6 +1148,17 @@ function sceneLines(cast, told, names) {
   return told.filter(r => scene[r]).map(r => ({ role: r, text: fill(scene[r], names) }));
 }
 
+/** punchSplit(text) → [앞, 웃음 포인트] — 마지막 문장을 떼어 냄(한 문장이면 ''). 따옴표 안의 . ! ? 에서는 자르지 않음 */
+function punchSplit(text) {
+  let cut = -1, dq = false, sq = false;
+  for (let i = 0; i < text.length - 1; i++) {
+    const ch = text[i];
+    if (ch === '"') dq = !dq; else if (ch === "'") sq = !sq;
+    else if (!dq && !sq && /[.!?…]/.test(ch) && text[i + 1] === ' ') cut = i + 1;
+  }
+  return cut < 0 ? [text, ''] : [text.slice(0, cut), text.slice(cut + 1)];
+}
+
 // ── nudge.js ──
 // 생각의 실마리(무료 힌트)와 첫 편 안내판이 같이 쓴다 (DOM 없음).
 // 지금까지 맞힌 자리(at)만 가지고, 다음에 '확실히' 알 수 있는 한 사람과 그걸 알려 주는 단서를 찾는다.
@@ -1434,28 +1463,43 @@ function reset() {
   TEXT = renderVariant(EP, variant(), STAGE.place, NAMES);
   clueOrder = tut ? variant().clues.map((_, i) => i) : shuffle(variant().clues.map((_, i) => i), rnd);
   trayOrder = shuffle(EP.cast.map(c => c.role), rnd);
-  Object.assign(ui, { pick: null, lost: null, flash: null, shown: false, nudge: null, tut, told: [], scenesOpen: false, holdHunt: false });
+  Object.assign(ui, { pick: null, lost: null, flash: null, shown: false, nudge: null, tut, told: [], scenesOpen: false, holdHunt: false, talk: null, suspect: null });
   drawCase();
   clearInterval(ui.tick); ui.tick = setInterval(() => { $('#timer').textContent = `⏱ ${mmss(elapsed())}`; }, 1000);
   $('#timer').textContent = '⏱ 0:00';
   render(); window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
+const TRAY_TIP = $('#trayTip').textContent;
+function suspectCard() {
+  const r = ui.suspect;
+  if (!r) return '<p class="suswait">판에서 의심 가는 사람을 눌러 보세요.</p>';
+  const p = who(r), line = sceneLines(EP.cast, [r], NAMES)[0], ga = josa(p.name, '이/가');
+  const [head, punch] = line ? punchSplit(line.text) : [`<b>${p.name}</b>${ga} 범인일까요? 범인 단서에 다 맞는지 볼까요?`, ''];
+  return `<div class="suscard">${pic(p)}<div class="tx"><p>${head}</p>${punch ? `<p class="punch">${punch}</p>` : ''}`
+    + `<button type="button" class="tbtn red" data-accuse="${r}">🔎 ${p.name}${ga} 범인!</button></div>`
+    + '<button type="button" class="x" data-sus-close aria-label="카드 닫기">✕</button></div>';
+}
 function render() {
   const keySeat = variant().answer[EP.key.role], last = EP.board.rows - 1;
-  const nv = nudgeView();
+  const nv = nudgeView(), over = ui.shown || (allSeated(RUN) && !needAccuse(RUN)); // over: 진실 화면 — 💬 표시 없음
   $('#beds').innerHTML = BOARD.seats.map(s => {
     const role = seatOf(s), p = role && who(role), [r, c] = BOARD.rc(s);
-    const cls = ['bed', r === last ? 'last' : '', p ? 'lock' : 'empty', ui.pick && !p ? 'target' : '', ui.flash === s ? 'justok' : '', nv.bed[s] || ''].join(' ');
+    const cls = ['bed', r === last ? 'last' : '', p ? 'lock' : 'empty', ui.pick && !p ? 'target' : '', ui.flash === s ? 'justok' : '', nv.bed[s] || '',
+      ui.talk === s ? 'talking' : '', role && role === ui.suspect ? 'chosen' : ''].join(' ');
     const label = `${rowNames(STAGE.place.rowName, EP.board.rows)[r]} ${c + 1}번 ${STAGE.place.seatWord}${p ? `, ${p.name}` : ', 비어 있음'}`;
     return `<div class="${cls}" data-bed="${s}" role="button" tabindex="0" aria-label="${label}">
       ${p ? `<span class="who">${pic(p)}<span class="nm">${p.name}</span></span>` : ''}
+      ${role && ui.told.includes(role) && !over ? '<span class="talk" aria-hidden="true">💬</span>' : ''}
       ${s === keySeat ? `<span class="apple" aria-hidden="true">${EP.key.img ? `<img src="${img(EP.key.img)}" alt="">` : EP.key.icon}</span>` : ''}
       <span class="no">${c + 1}</span></div>`;
   }).join('');
   const left = EP.cast.filter(c => !RUN.at[c.role]).length;
-  $('#trayLeft').textContent = left ? `남은 용의자 ${left}명` : '모두 제자리! 이제 범인을 지목해요';
-  $('#tray').innerHTML = trayOrder.map(id => { const p = who(id); return `<button type="button" class="chip ${RUN.at[id] ? 'used' : ''} ${ui.pick === id ? 'picked' : ''}" data-person="${id}" aria-pressed="${ui.pick === id}">${pic(p)}${p.name}</button>`; }).join('');
+  const hunting = needAccuse(RUN) && !ui.holdHunt; // 범인 찾기: 이제 쓸 일 없는 얼굴 칸 자리에 누른 사람 카드
+  $('#trayLeft').textContent = hunting ? '누가 범인일까요?' : left ? `남은 용의자 ${left}명` : '모두 제자리!';
+  $('#trayTip').textContent = hunting ? '판에서 사람을 누르면 그 사람 이야기가 여기 떠요 · 버튼으로 지목 · 틀리면 송편 −1' : TRAY_TIP;
+  $('#tray').classList.toggle('hunting', hunting);
+  $('#tray').innerHTML = hunting ? suspectCard() : trayOrder.map(id => { const p = who(id); return `<button type="button" class="chip ${RUN.at[id] ? 'used' : ''} ${ui.pick === id ? 'picked' : ''}" data-person="${id}" aria-pressed="${ui.pick === id}">${pic(p)}${p.name}</button>`; }).join('');
   // 단서: 관련된 사람이 다 앉았을 때만 맞음/어긋남. 아직 안 맞은 단서가 위, 맞은 단서는 아래로
   const rows = clueOrder.map(i => { const h = holds(variant().clues[i], RUN.at, BOARD); return { i, ready: h !== null, pass: h === true }; });
   const ok = rows.filter(r => r.pass).length;
@@ -1577,15 +1621,18 @@ function toast(msg, good = false) {
 function tapPerson(id) {
   if (RUN.at[id] || !RUN.hearts || ui.shown) return;
   ui.pick = ui.pick === id ? null : id;
+  closeTale(); // 다음 사람을 고르면 이야기 말풍선은 닫힘 — 다음 자리를 찾을 땐 판이 다 보이게
   render();
 }
-// 앉히는 순간 바로 확인: 맞으면 고정, 틀리면 도깨비가 송편 하나를 먹고 그 인물이 한마디. 지목 단계면 누른 사람을 지목
+// 앉히는 순간 바로 확인: 맞으면 고정, 틀리면 도깨비가 송편 하나를 먹고 그 인물이 한마디.
+// 지목 단계: 누르면 바로 지목하지 않고 얼굴 칸 자리에 그 사람 카드(이야기 + '범인!' 버튼). 같은 사람을 또 누르면 닫힘
 function tapBed(s) {
   if (ui.holdHunt) { releaseHunt(); return; } // 마지막 이야기를 읽는 중: 누르면 닫고 범인 찾기로
-  if (needAccuse(RUN) && seatOf(s)) { doAccuse(seatOf(s), s); return; }
-  if (!ui.pick) { // 앉은 사람을 누르면 그날 이야기를 다시, 떠 있을 때 또 누르면 닫기 (지목 단계에선 누르는 게 지목)
-    const r = seatOf(s), open = document.querySelector(`.bubble.tale[data-bed="${s}"]`);
-    if (open) open.remove(); else if (r && ui.told.includes(r)) sayScene(r, s);
+  if (needAccuse(RUN)) { chooseSuspect(seatOf(s)); return; }
+  if (!ui.pick) { // 앉은 사람을 누르면 그날 이야기를 다시, 떠 있을 때 또 누르면 닫기
+    const r = seatOf(s), open = ui.talk === s;
+    closeTale();
+    if (!open && r && ui.told.includes(r)) sayScene(r, s);
     return;
   }
   const role = ui.pick; ui.pick = null;
@@ -1594,9 +1641,15 @@ function tapBed(s) {
   if (res.ok) { ui.flash = s; tell(role, s); render(); sfx('ok'); toast(`${NAMES[role]}, 여기 맞아요!`, true); return; }
   missed(s, role, CHAR[who(role).face].quips, res.gameOver);
 }
+function chooseSuspect(role) {
+  ui.suspect = role && role !== ui.suspect ? role : null;
+  render();
+  if (ui.suspect && matchMedia('(max-width: 760px)').matches) $('#tray').scrollIntoView({ behavior: isCalm() ? 'auto' : 'smooth', block: 'nearest' });
+}
 function doAccuse(role, s) {
   const res = accuse(RUN, role);
   if (res.ignored) return;
+  ui.suspect = null; // 틀리면 카드를 닫고 다시 고르게
   if (res.ok) { sfx('ok'); toast(`🔎 ${NAMES[role]}, 딱 걸렸어요!`, true); render(); return; }
   missed(s, role, CHAR[who(role).face].notMe, res.gameOver);
 }
@@ -1633,22 +1686,32 @@ function eatCake(i) {
   later(1220, () => { dk.classList.remove('chewing'); dk.classList.add('down'); }); // ate 는 남겨서 입 다문 채 내려감
   setTimeout(() => { dk.remove(); fly.remove(); }, 1480);
 }
-// 맞힌 사람의 '그날 이야기': 판 위 말풍선(3.8초) + 사건 칸에 앉힌 순서대로 쌓임. render() 전에 불러야 마지막 사람의 '범인을 찾아라'가 뒤로 밀림
+// 맞힌 사람의 '그날 이야기': 판 위 말풍선(다음 행동까지 남음) + 사건 칸에 앉힌 순서대로 쌓임. render() 전에 불러야 마지막 사람의 '범인을 찾아라'가 뒤로 밀림
 function tell(role, seat) {
   if (ui.told.includes(role) || !EP.cast.find(c => c.role === role)?.scene) return;
   ui.told.push(role); drawCase();
+  ui.holdHunt = needAccuse(RUN); // 마지막 사람: 말풍선의 '범인 찾기' 버튼(또는 판·말풍선 누르기)으로 닫을 때까지 범인 찾기를 미룸
   sayScene(role, seat);
-  if (needAccuse(RUN)) { const run = ui.run; ui.holdHunt = true; ui.holdTimer = setTimeout(() => { if (run === ui.run) releaseHunt(); }, 3800); } // 마지막 사람: 말풍선이 닫힐 때까지 범인 찾기를 미룸
 }
 function releaseHunt() {
   if (!ui.holdHunt) return;
-  ui.holdHunt = false; clearTimeout(ui.holdTimer);
-  document.querySelectorAll('.bubble.tale').forEach(x => x.remove());
+  ui.holdHunt = false;
+  closeTale();
   render(); // 이제 '범인을 찾아라!'·범인 단서·지목
 }
+// 이야기 말풍선: 시간으로 닫지 않음 — 다음 얼굴 고르기·판 누르기·말풍선 누르기로 닫힘. 마지막 문장(웃음 포인트)은 줄을 바꿔 굵게
 function sayScene(role, seat) {
   const el = document.querySelector(`[data-bed="${seat}"]`);
-  if (el) quip(el, who(role), [sceneLines(EP.cast, [role], NAMES)[0].text], 'tale', 3800);
+  if (!el) return;
+  const [head, punch] = punchSplit(sceneLines(EP.cast, [role], NAMES)[0].text);
+  const go = ui.holdHunt ? '<button type="button" class="tbtn" data-hunt>🔎 범인 찾기</button>' : '';
+  bubble(el, who(role), `${head}${punch ? `<b class="punch">${punch}</b>` : ''}${go}`, 'tale');
+  ui.talk = seat; el.classList.add('talking');
+}
+function closeTale() {
+  document.querySelectorAll('.bubble.tale').forEach(x => x.remove());
+  document.querySelector('.bed.talking')?.classList.remove('talking');
+  ui.talk = null;
 }
 function drawCase() {
   const has = EP.cast.some(c => c.scene), lines = sceneLines(EP.cast, ui.told, NAMES), folded = !ui.scenesOpen && !ui.shown;
@@ -1657,17 +1720,25 @@ function drawCase() {
     : (lines.length > 1 && folded ? `<button type="button" class="scenetog" data-scenes>그날 이야기 ${lines.length}줄 ▾</button>` : '')
       + `<ol class="scenes${folded ? ' folded' : ''}">${lines.map(l => `<li>${pic(who(l.role))}<span>${l.text}</span></li>`).join('')}</ol>`);
 }
-function quip(el, p, lines, kind = '', ms = 2200) {
-  document.querySelectorAll('.bubble').forEach(x => x.remove());
-  const top = BOARD.rc(el.dataset.bed)[0] === 0;
+// 틀렸을 때 그 인물의 한마디 (2.2초)
+function quip(el, p, lines) {
+  const bub = bubble(el, p, `<b>${p.name}</b> ${pickOne(lines)}`);
+  setTimeout(() => bub.remove(), 2200);
+}
+// 자리 위(맨 앞줄이면 아래) 말풍선. 그쪽에 판 안 자리가 모자라면 반대쪽으로, 판 가장자리면 안쪽으로 밀어 넣음 (판 밖은 잘림)
+function bubble(el, p, html, kind = '') {
+  closeTale(); document.querySelectorAll('.bubble').forEach(x => x.remove());
   const bub = document.createElement('div');
-  bub.className = 'bubble' + (top ? ' down' : '') + (kind ? ` ${kind}` : ''); bub.dataset.bed = el.dataset.bed;
-  bub.innerHTML = `${pic(p)}<span>${kind === 'tale' ? '' : `<b>${p.name}</b> `}${pickOne(lines)}</span>`; // 이야기 줄은 이름으로 시작해서 이름표를 또 달지 않음
-  bub.style.top = `${top ? el.offsetTop + el.offsetHeight : el.offsetTop}px`;
+  bub.className = 'bubble' + (kind ? ` ${kind}` : '');
+  bub.innerHTML = `${pic(p)}<span>${html}</span>`;
   $('#room').appendChild(bub);
-  const half = bub.offsetWidth / 2, W = $('#room').clientWidth; // 판 가장자리 자리면 말풍선을 안쪽으로 밀어 넣음 (폭이 좁아져 글자가 세로로 쌓이지 않게)
-  bub.style.left = `${Math.min(Math.max(el.offsetLeft + el.offsetWidth / 2, half + 4), W - half - 4)}px`;
-  setTimeout(() => bub.remove(), ms);
+  const room = $('#room'), h = bub.offsetHeight, half = bub.offsetWidth / 2;
+  const above = el.offsetTop - 6, below = room.clientHeight - el.offsetTop - el.offsetHeight - 6, fitsUp = h <= above, fitsDown = h <= below;
+  const down = fitsUp === fitsDown ? (fitsUp ? BOARD.rc(el.dataset.bed)[0] === 0 : below > above) : fitsDown; // 둘 다 안 맞으면 넓은 쪽
+  bub.classList.toggle('down', down);
+  bub.style.top = `${down ? el.offsetTop + el.offsetHeight : el.offsetTop}px`;
+  bub.style.left = `${Math.min(Math.max(el.offsetLeft + el.offsetWidth / 2, half + 4), room.clientWidth - half - 4)}px`;
+  return bub;
 }
 // 족집게(힌트): 못 맞힌 한 명을 콕 집어 정답 자리에 (실수 1번으로 침)
 function doHint() {
@@ -1792,7 +1863,10 @@ function flip(on) {
 document.addEventListener('click', e => {
   const t = e.target;
   const p = t.closest('[data-person]'), b = t.closest('[data-bed]'), c = t.closest('[data-clue]'), su = t.closest('[data-sus]');
-  if (p) tapPerson(p.dataset.person);
+  if (t.closest('[data-accuse]')) { const r = t.closest('[data-accuse]').dataset.accuse; doAccuse(r, RUN.at[r]); }
+  else if (t.closest('[data-sus-close]')) chooseSuspect(null);
+  else if (t.closest('.bubble.tale')) { if (ui.holdHunt) releaseHunt(); else closeTale(); } // 말풍선(또는 그 안의 '범인 찾기')을 누르면 닫힘
+  else if (p) tapPerson(p.dataset.person);
   else if (b) tapBed(b.dataset.bed);
   else if (c) blink(named(variant().clues[+c.dataset.clue]));
   else if (su) blink(named(variant().culprit[+su.dataset.sus]));
