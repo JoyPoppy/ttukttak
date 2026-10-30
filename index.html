@@ -1434,7 +1434,7 @@ function reset() {
   TEXT = renderVariant(EP, variant(), STAGE.place, NAMES);
   clueOrder = tut ? variant().clues.map((_, i) => i) : shuffle(variant().clues.map((_, i) => i), rnd);
   trayOrder = shuffle(EP.cast.map(c => c.role), rnd);
-  Object.assign(ui, { pick: null, lost: null, flash: null, shown: false, nudge: null, tut, told: [], toldAt: -1e9, scenesOpen: false });
+  Object.assign(ui, { pick: null, lost: null, flash: null, shown: false, nudge: null, tut, told: [], scenesOpen: false, holdHunt: false });
   drawCase();
   clearInterval(ui.tick); ui.tick = setInterval(() => { $('#timer').textContent = `⏱ ${mmss(elapsed())}`; }, 1000);
   $('#timer').textContent = '⏱ 0:00';
@@ -1469,16 +1469,17 @@ function render() {
   $('#count').textContent = `${placed} / ${EP.cast.length}명`;
   $('#countClue').textContent = `${ok} / ${variant().clues.length} 맞음`;
   // 모두 앉으면 지목 단계: 그때 범인 단서가 열리고, 판에서 그 사람을 골라야 진실이 열린다
-  const accusing = needAccuse(RUN), phrase = EP.key.phrase, done = allSeated(RUN);
+  // 마지막 사람의 이야기 말풍선이 떠 있는 동안(ui.holdHunt)은 범인 찾기로 넘어가지 않음 — 닫히면 releaseHunt() 가 다시 그림
+  const realAcc = needAccuse(RUN), accusing = realAcc && !ui.holdHunt, phrase = EP.key.phrase, done = allSeated(RUN) && !ui.holdHunt;
   const reveal = accusing && !$('#app').classList.contains('accusing'); // 막 다 앉힌 그 순간 한 번만 연출
   $('#suspect').classList.toggle('fresh', reveal);
   $('#suspect').innerHTML = `<div class="sh">🔎 ${phrase}${josa(phrase, '은/는')} 누구?</div>`
     + (done ? TEXT.culprit.map((t, i) => `<div class="clue sus${nv.sus.has(i) ? ' look' : ''}" data-sus="${i}" role="button" tabindex="0" style="--k:${i}"><span class="st">?</span><div><span>${t}</span></div></div>`).join('')
       : `<div class="sealed">🔒 자리를 모두 맞히면 범인 단서 ${TEXT.culprit.length}개가 열려요</div>`)
     + (accusing ? `<div class="accuse-cta" style="--k:${TEXT.culprit.length}">판에서 그 사람을 눌러 지목하세요</div>` : '');
-  if (reveal) { const run = ui.run; if (performance.now() - ui.toldAt < 100) setTimeout(() => { if (run === ui.run && needAccuse(RUN)) huntBanner(); }, 1000); else huntBanner(); } // 마지막 사람의 이야기 말풍선을 먼저
+  if (reveal) huntBanner();
   $('#app').classList.toggle('accusing', accusing);
-  const solved = allSeated(RUN) && !accusing;
+  const solved = allSeated(RUN) && !realAcc;
   $('#app').classList.toggle('solved', solved);
   $('#hint').disabled = ui.shown || allSeated(RUN);
   $('#nudge').disabled = ui.shown || solved;
@@ -1497,7 +1498,7 @@ const nudgeSig = () => `${Object.keys(RUN.at).length}|${needAccuse(RUN)}`;
 const nameList = roles => roles.map(r => NAMES[r]).join('·');
 function nudgeView() {
   const view = { bed: {}, clue: new Set(), sus: new Set(), html: '' };
-  if (ui.shown || (allSeated(RUN) && !needAccuse(RUN))) return view;
+  if (ui.shown || ui.holdHunt || (allSeated(RUN) && !needAccuse(RUN))) return view;
   const sig = nudgeSig(), mine = ui.nudge && ui.nudge.sig === sig ? ui.nudge.level : 0;
   const placed = Object.keys(RUN.at).length, accusing = needAccuse(RUN);
   const auto = ui.tut && !accusing ? TUT_LEVEL[placed] || 0 : 0;
@@ -1580,6 +1581,7 @@ function tapPerson(id) {
 }
 // 앉히는 순간 바로 확인: 맞으면 고정, 틀리면 도깨비가 송편 하나를 먹고 그 인물이 한마디. 지목 단계면 누른 사람을 지목
 function tapBed(s) {
+  if (ui.holdHunt) { releaseHunt(); return; } // 마지막 이야기를 읽는 중: 누르면 닫고 범인 찾기로
   if (needAccuse(RUN) && seatOf(s)) { doAccuse(seatOf(s), s); return; }
   if (!ui.pick) { // 앉은 사람을 누르면 그날 이야기를 다시, 떠 있을 때 또 누르면 닫기 (지목 단계에선 누르는 게 지목)
     const r = seatOf(s), open = document.querySelector(`.bubble.tale[data-bed="${s}"]`);
@@ -1634,8 +1636,15 @@ function eatCake(i) {
 // 맞힌 사람의 '그날 이야기': 판 위 말풍선(3.8초) + 사건 칸에 앉힌 순서대로 쌓임. render() 전에 불러야 마지막 사람의 '범인을 찾아라'가 뒤로 밀림
 function tell(role, seat) {
   if (ui.told.includes(role) || !EP.cast.find(c => c.role === role)?.scene) return;
-  ui.told.push(role); ui.toldAt = performance.now(); drawCase();
+  ui.told.push(role); drawCase();
   sayScene(role, seat);
+  if (needAccuse(RUN)) { const run = ui.run; ui.holdHunt = true; ui.holdTimer = setTimeout(() => { if (run === ui.run) releaseHunt(); }, 3800); } // 마지막 사람: 말풍선이 닫힐 때까지 범인 찾기를 미룸
+}
+function releaseHunt() {
+  if (!ui.holdHunt) return;
+  ui.holdHunt = false; clearTimeout(ui.holdTimer);
+  document.querySelectorAll('.bubble.tale').forEach(x => x.remove());
+  render(); // 이제 '범인을 찾아라!'·범인 단서·지목
 }
 function sayScene(role, seat) {
   const el = document.querySelector(`[data-bed="${seat}"]`);
