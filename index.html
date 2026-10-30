@@ -564,16 +564,6 @@ html.calm .bubble { animation: none !important; } /* 움직임 줄이기: 말풍
 .shelfcard .cardscenes ol { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; max-height: 300px; overflow: auto; }
 .shelfcard .cardscenes li { display: grid; grid-template-columns: 26px 1fr; gap: 8px; align-items: start; padding: 6px 8px; border-radius: 10px; background: rgb(255 255 255 / .6); border: 1px solid #ecdcb8; font: 400 13.5px/1.5 var(--font-body); }
 .shelfcard .cardscenes .face { width: 26px; height: 26px; }
-/* 명탐정: 범인 단서 전 찜 — 자리 🕵️(오른쪽 위), 말풍선 찜 버튼, 진실 화면 도장, 진열장 표시 */
-.bed .pin { position: absolute; z-index: 2; right: 2px; top: 2px; font-size: 13px; line-height: 1; padding: 3px 4px; background: #3b2c1c; border-radius: 99px; box-shadow: 0 1px 3px rgb(0 0 0 / .35); pointer-events: none; }
-.tbtn.pinb { background: #3b2c1c; color: var(--gold); box-shadow: 0 3px 0 #22180d; }
-.tbtn.pinb.on { background: #b23a2a; color: #fff; box-shadow: 0 3px 0 #7d2418; }
-.bubble .pinnote { display: block; margin-top: 4px; font: 600 11.5px/1.3 var(--font-ui); color: #8a7658; }
-.back .det { display: flex; align-items: center; gap: 10px; margin: 6px 0; padding: 10px 12px; border-radius: 12px; background: #fff3ea; border: 2px dashed #b23a2a; }
-.back .det .dstamp { font-size: 32px; transform: rotate(-10deg); }
-.back .det b { display: block; font: 800 18px/1.2 var(--font-title); color: #b23a2a; }
-.back .det div > span { font: 600 13.5px/1.4 var(--font-ui); }
-.shelfcard .detb { color: #b23a2a; font-weight: 700; }
 /* 인물 도감: 왼쪽 얼굴 칸, 오른쪽(폰은 위) 고른 인물 카드 */
 .dexbody { display: grid; grid-template-columns: minmax(0, 1fr) 320px; gap: 22px; align-items: start; }
 .dexgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(64px, 1fr)); gap: 10px; align-content: start; }
@@ -1118,21 +1108,11 @@ const SOURCE = "ec73c942769ecfb8";
 // 정답은 에피소드 변형(ep.variants[v].answer)에서 읽는다.
 
 const HEARTS = 3, REFILL = 100, HINT = 30, REWARD = 10, HEART_BONUS = 3, REPLAY = 2, START_COINS = 60; // 코인은 쓸 데가 적어서 조금씩 쌓이게
-const DETECTIVE = 10; // 명탐정: 범인 단서가 열리기 전에 찜한 사람이 범인이면 (처음 깰 때만)
 
-/** newRun(ep, variantIndex, now, practice?) → Run. practice = 첫 편 안내판(틀려도 송편·별 그대로). pin = 찜한 사람, hunt = 범인 단서가 열림 */
+/** newRun(ep, variantIndex, now, practice?) → Run. practice = 첫 편 안내판(틀려도 송편·별 그대로) */
 function newRun(ep, v, now, practice = false) {
-  return { ep, v, at: {}, hearts: HEARTS, wrong: 0, accused: false, t0: now, t1: 0, practice, pin: null, hunt: false };
+  return { ep, v, at: {}, hearts: HEARTS, wrong: 0, accused: false, t0: now, t1: 0, practice };
 }
-
-/** pin(run, role) → { pinned } — 범인 단서가 열리기 전, 앉은 사람만 찜. 같은 사람이면 풀고 다른 사람이면 바꿈 (맞는지는 끝까지 안 알려 줌). 안 되면 { ignored } */
-function pin(run, role) {
-  if (run.hunt || run.accused || !run.at[role]) return { ignored: true };
-  run.pin = run.pin === role ? null : role;
-  return { pinned: run.pin };
-}
-/** openHunt(run) — 범인 단서가 열림: 이때부터 찜은 못 바꿈 */
-const openHunt = run => { run.hunt = true; };
 const answer = run => run.ep.variants[run.v].answer;
 const occupied = (run, seat) => Object.values(run.at).includes(seat);
 
@@ -1179,19 +1159,17 @@ function refill(run, wallet, how) {
   run.hearts = 1; return true;
 }
 
-/** finish(run, rec, wallet, now) → { stars, gain, first, best, newBest, detective } — 기록·코인 갱신.
- *  detective = 처음 깰 때 찜한 사람이 범인 (+10냥, 기록에 남음) — 다시 하기는 범인을 이미 알아서 없음 */
+/** finish(run, rec, wallet, now) → { stars, gain, first, best, newBest } — 기록·코인 갱신 */
 function finish(run, rec, wallet, now) {
   run.t1 = now;
   const sec = Math.round((now - run.t0) / 1000);
   const stars = run.wrong === 0 ? 3 : run.wrong === 1 ? 2 : 1;
   const prev = rec[run.ep.id], first = !prev;
-  const detective = first && !!run.ep.key && run.pin === run.ep.key.role;
-  const gain = (first ? REWARD + HEART_BONUS * run.hearts : REPLAY) + (detective ? DETECTIVE : 0);
+  const gain = first ? REWARD + HEART_BONUS * run.hearts : REPLAY;
   const best = Math.min(sec, prev?.best ?? Infinity);
-  rec[run.ep.id] = { stars: Math.max(stars, prev?.stars || 0), best, clears: (prev?.clears || 0) + 1, ...(detective || prev?.detective ? { detective: true } : {}) };
+  rec[run.ep.id] = { stars: Math.max(stars, prev?.stars || 0), best, clears: (prev?.clears || 0) + 1 };
   wallet.coins += gain;
-  return { stars, gain, first, best, newBest: !!prev && sec < prev.best, sec, detective };
+  return { stars, gain, first, best, newBest: !!prev && sec < prev.best, sec };
 }
 
 /** 차례대로 열림: 첫 화는 처음부터, 그다음은 앞 화를 깨면 */
@@ -1591,7 +1569,7 @@ function renderBook(done) {
   // 폰은 카드가 위에 붙어 있어 접어 두고(눌러 펼침), PC 는 옆 칸이라 펼쳐 둠
   const told = lines.length ? `<details class="cardscenes"${matchMedia('(max-width: 760px)').matches ? '' : ' open'}><summary>📜 그날 이야기 ${lines.length}줄</summary><ol>${lines.map(l => `<li>${pic({ face: ep.cast.find(c => c.role === l.role).char })}<span>${l.text}</span></li>`).join('')}</ol></details>` : '';
   const card = `<aside class="shelfcard" style="${scene(ep.stage)}" aria-live="polite"><span class="big">${thing(ep)}</span><small>${no(ep)}화 · ${STAGES[ep.stage].name}</small><h3>${ep.title}</h3>
-    <p class="hook">${ep.hook}</p><p class="rec"><span class="stars">${starsTxt(r.stars)}</span> 최고 ${mmss(r.best)}${r.detective ? ' · <span class="detb">🕵️ 명탐정</span>' : ''}</p>
+    <p class="hook">${ep.hook}</p><p class="rec"><span class="stars">${starsTxt(r.stars)}</span> 최고 ${mmss(r.best)}</p>
     <button type="button" class="again" data-play="${ep.id}">다시 하기</button>${told}</aside>`;
   const locked = stageIds.filter(s => !visited.includes(s));
   // 뒤로가기는 설정 버튼과 짝으로 왼쪽 위에 늘 — 한참 내려도 바로 돌아가게. 위 줄(엽전·지금 사건)은 수첩에선 뺌
@@ -1691,12 +1669,10 @@ function render() {
     const role = seatOf(s), p = role && who(role), [r, c] = BOARD.rc(s);
     const cls = ['bed', r === last ? 'last' : '', p ? 'lock' : 'empty', ui.pick && !p ? 'target' : '', ui.flash === s ? 'justok' : '', nv.bed[s] || '',
       ui.talk === s ? 'talking' : '', role && role === ui.suspect ? 'chosen' : ''].join(' ');
-    const pinned = role && role === RUN.pin && !over; // 🕵️ 찜한 사람 (진실 화면에선 뺌)
-    const label = `${rowNames(STAGE.place.rowName, EP.board.rows)[r]} ${c + 1}번 ${STAGE.place.seatWord}${p ? `, ${p.name}` : ', 비어 있음'}${pinned ? ', 찜함' : ''}`;
+    const label = `${rowNames(STAGE.place.rowName, EP.board.rows)[r]} ${c + 1}번 ${STAGE.place.seatWord}${p ? `, ${p.name}` : ', 비어 있음'}`;
     return `<div class="${cls}" data-bed="${s}" role="button" tabindex="0" aria-label="${label}">
       ${p ? `<span class="who">${pic(p)}<span class="nm">${p.name}</span></span>` : ''}
       ${role && ui.told.includes(role) && !over ? '<span class="talk" aria-hidden="true">💬</span>' : ''}
-      ${pinned ? '<span class="pin" aria-hidden="true">🕵️</span>' : ''}
       ${s === keySeat ? `<span class="apple" aria-hidden="true">${EP.key.img ? `<img src="${img(EP.key.img)}" alt="">` : EP.key.icon}</span>` : ''}
       <span class="no">${c + 1}</span></div>`;
   }).join('');
@@ -1727,7 +1703,6 @@ function render() {
   // 모두 앉으면 지목 단계: 그때 범인 단서가 열리고, 판에서 그 사람을 골라야 진실이 열린다
   // 마지막 사람의 이야기 말풍선이 떠 있는 동안(ui.holdHunt)은 범인 찾기로 넘어가지 않음 — 닫히면 releaseHunt() 가 다시 그림
   const realAcc = needAccuse(RUN), accusing = realAcc && !ui.holdHunt, phrase = EP.key.phrase, done = allSeated(RUN) && !ui.holdHunt;
-  if (accusing) openHunt(RUN); // 범인 단서가 열림 — 이제 찜은 못 바꿈
   const reveal = accusing && !$('#app').classList.contains('accusing'); // 막 다 앉힌 그 순간 한 번만 연출
   $('#suspect').classList.toggle('fresh', reveal);
   $('#suspect').innerHTML = `<div class="sh">🔎 ${phrase}${josa(phrase, '은/는')} 누구?</div>`
@@ -1847,7 +1822,7 @@ function tapBed(s) {
   if (!ui.pick) { // 앉은 사람을 누르면 그날 이야기를 다시, 떠 있을 때 또 누르면 닫기
     const r = seatOf(s), open = ui.talk === s;
     closeTale();
-    if (!open && r && (ui.told.includes(r) || pinOpen())) sayScene(r, s); // 할 말이 없어도 범인 단서 전엔 찜하러 띄움
+    if (!open && r && ui.told.includes(r)) sayScene(r, s);
     return;
   }
   const role = ui.pick; ui.pick = null;
@@ -1907,15 +1882,12 @@ function tell(role, seat) {
   if (ui.told.includes(role)) return;
   const said = ui.plan ? talkFor(variant(), BOARD, EP.cast.map(c => c.role), ui.plan.order, ui.heard, RUN.at) : [];
   if (said.length) { ui.heard.push(...said); ui.said[role] = said; ui.fresh = said.at(-1); retext(); }
-  const scene = !!EP.cast.find(c => c.role === role)?.scene, last = needAccuse(RUN);
-  if (scene || said.length) { ui.told.push(role); drawCase(); }
-  else if (!last) return;
-  // 마지막 사람: 말풍선의 '범인 찾기' 버튼(또는 판·말풍선 누르기)으로 닫을 때까지 범인 찾기를 미룸 — 범인 단서 전 마지막 찜 기회도 여기
-  ui.holdHunt = last;
+  const scene = !!EP.cast.find(c => c.role === role)?.scene;
+  if (!scene && !said.length) return;
+  ui.told.push(role); drawCase();
+  ui.holdHunt = needAccuse(RUN) && scene; // 마지막 사람: 말풍선의 '범인 찾기' 버튼(또는 판·말풍선 누르기)으로 닫을 때까지 범인 찾기를 미룸
   sayScene(role, seat);
 }
-// 찜(명탐정): 범인 단서가 열리기 전, 앉은 사람 말풍선에서
-const pinOpen = () => !!EP.key && !RUN.hunt && !RUN.accused && !ui.shown;
 function releaseHunt() {
   if (!ui.holdHunt) return;
   ui.holdHunt = false;
@@ -1927,12 +1899,10 @@ function sayScene(role, seat) {
   const el = document.querySelector(`[data-bed="${seat}"]`);
   if (!el) return;
   const line = sceneLines(EP.cast, [role], NAMES)[0], said = ui.said[role] || []; // 이야기 줄이 없는 편은 이름표 + 메모지 칸만
-  const canPin = pinOpen(), pinned = RUN.pin === role;
-  const [head, punch] = line ? punchSplit(line.text) : [`<b>${NAMES[role]}</b> ${!said.length && canPin ? '이 사람이 범인 같나요?' : ''}`, ''];
+  const [head, punch] = line ? punchSplit(line.text) : [`<b>${NAMES[role]}</b> `, ''];
   const box = said.map((i, k) => `<span class="said">🔎 ${TEXT.spoken[i]}${k === said.length - 1 ? '<small>📝 메모에 적었어요</small>' : ''}</span>`).join('');
-  const pinBtn = canPin ? `<button type="button" class="tbtn pinb${pinned ? ' on' : ''}" data-pin="${role}" aria-pressed="${pinned}">${pinned ? '🕵️ 찜 풀기' : '🕵️ 이 사람 찜'}</button><small class="pinnote">범인 단서 전에 맞히면 명탐정 +${DETECTIVE}냥 · 틀려도 송편 그대로</small>` : '';
   const go = ui.holdHunt ? '<button type="button" class="tbtn" data-hunt>🔎 범인 찾기</button>' : '';
-  bubble(el, who(role), `${head}${punch ? `<b class="punch">${punch}</b>` : ''}${box}${pinBtn}${go}`, 'tale');
+  bubble(el, who(role), `${head}${punch ? `<b class="punch">${punch}</b>` : ''}${box}${go}`, 'tale');
   ui.talk = seat; el.classList.add('talking');
 }
 function closeTale() {
@@ -2020,13 +1990,12 @@ function onSolved() {
   // 그날 이야기 다시 보기: 범인(복선에 밑줄) → 미끼(↳ 사실은) → 나머지, 한 덩어리로 펼침
   const R = recallLines(EP.cast, EP.key.role, NAMES);
   const recall = R.length ? `<div class="recall fade"><div class="rh">📜 그날 이야기 다시 보기</div>${R.map(l => `<div class="rl${l.culprit ? ' cul' : ''}">${pic(who(l.role))}<span>${l.mark ? `${l.mark[0]}<u>${l.mark[1]}</u>${l.mark[2]}` : l.text}${l.culprit ? `<em class="tg">${l.mark ? '🔎 복선' : '범인'}</em>` : ''}${l.after ? `<small>↳ 사실은: ${l.after}</small>` : ''}</span></div>`).join('')}</div>` : '';
-  const det = r.detective ? `<div class="det fade"><span class="dstamp" aria-hidden="true">🕵️</span><div><b>명탐정 도장!</b><span>범인 단서가 열리기 전에 ${fill(`{${EP.key.role}|를}`, NAMES)} 찜했어요 · ${nyang('+' + DETECTIVE)}</span></div></div>` : '';
-  $('#truth').innerHTML = `<p class="lead fade">${F(T.lead)}</p>${det}
+  $('#truth').innerHTML = `<p class="lead fade">${F(T.lead)}</p>
     ${T.lines.map(([role, txt]) => `<div class="line fade">${pic(who(role))}<p><b>${NAMES[role]}:</b> "<span class="say" data-say="${F(txt).replace(/"/g, '&quot;')}"></span>"</p></div>`).join('')}
     <div class="twist fade">${F(T.twist)}</div>${recall}
     <p class="teaser fade">${EP.teaser}</p>`;
   $('#result').innerHTML = `<div class="fade"><span class="stars big">${starsTxt(r.stars)}</span> <span>⏱ ${mmss(r.sec)}${r.newBest ? ' · <b>최고 기록!</b>' : !r.first ? ` · 최고 ${mmss(r.best)}` : ''}</span></div>
-    <p class="reward fade">${r.first ? `첫 클리어 보상 ${nyang('+' + r.gain)} (기본 ${REWARD} + 남은 송편 ${RUN.hearts}개 × ${HEART_BONUS}${r.detective ? ` + 명탐정 ${DETECTIVE}` : ''})` : `다시 깬 이야기라 보상은 ${nyang('+' + r.gain)}`}</p>`;
+    <p class="reward fade">${r.first ? `첫 클리어 보상 ${nyang('+' + r.gain)} (기본 ${REWARD} + 남은 송편 ${RUN.hearts}개 × ${HEART_BONUS})` : `다시 깬 이야기라 보상은 ${nyang('+' + r.gain)}`}</p>`;
   $('#next').hidden = !EPISODES[EPISODES.indexOf(EP) + 1];
   sfx('win'); celebrate();
 }
@@ -2096,7 +2065,6 @@ document.addEventListener('click', e => {
   const p = t.closest('[data-person]'), b = t.closest('[data-bed]'), c = t.closest('[data-clue]'), su = t.closest('[data-sus]');
   if (t.closest('[data-accuse]')) { const r = t.closest('[data-accuse]').dataset.accuse; doAccuse(r, RUN.at[r]); }
   else if (t.closest('[data-sus-close]')) chooseSuspect(null);
-  else if (t.closest('[data-pin]')) { const r = t.closest('[data-pin]').dataset.pin; if (!pin(RUN, r).ignored) { render(); sayScene(r, RUN.at[r]); } } // 찜·찜 풀기 (말풍선은 그대로)
   else if (t.closest('.bubble.tale')) { if (ui.holdHunt) releaseHunt(); else closeTale(); } // 말풍선(또는 그 안의 '범인 찾기')을 누르면 닫힘
   else if (p) tapPerson(p.dataset.person);
   else if (b) tapBed(b.dataset.bed);
