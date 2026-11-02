@@ -223,7 +223,7 @@ body.poster-mode { background: radial-gradient(1100px 600px at 18% 8%, color-mix
 .poster-mode .wrap { max-width: 1160px; }
 .poster { position: relative; min-height: calc(100svh - 70px); display: grid; grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr); grid-template-rows: auto 1fr; gap: 20px 48px; color: var(--cream); }
 .poster::after { content: '?'; position: fixed; right: -3vw; bottom: -14vh; font: 800 min(70vh, 640px)/1 var(--font-title); color: rgb(255 255 255 / .05); pointer-events: none; z-index: -1; }
-.ptop { grid-column: 1 / -1; display: flex; align-items: center; gap: 10px; padding-right: 54px; }
+.ptop { grid-column: 1 / -1; display: flex; flex-wrap: wrap; align-items: center; gap: 8px 10px; padding-right: 54px; } /* 좁은 폰: 버튼이 화면 밖·설정 버튼 밑으로 밀리지 않게 둘째 줄로 */
 .pbrand { font: 800 22px/1 var(--font-title); margin-right: auto; white-space: nowrap; }
 .pill { font: 600 14px/1 var(--font-ui); padding: 8px 13px; border-radius: 99px; border: 1.5px solid rgb(255 243 220 / .45); background: rgb(0 0 0 / .14); color: var(--cream); white-space: nowrap; }
 .pbook { cursor: pointer; } .pbook b { color: var(--gold); }
