@@ -379,6 +379,39 @@ html.notimer .timer { display: none; }
 .field { display: grid; gap: 12px; min-width: 0; }
 .trayhead { display: flex; align-items: baseline; flex-wrap: wrap; gap: 4px 10px; color: var(--cream); }
 .trayhead b { font: 800 17px/1.2 var(--font-title); }
+.trayhead { align-items: center; }
+.placebtn { margin-left: auto; border: 1.5px solid rgb(255 243 220 / .55); background: rgb(0 0 0 / .14); color: var(--cream); border-radius: 99px; padding: 6px 11px; font: 600 13px/1 var(--font-ui); cursor: pointer; }
+.placebtn.on { background: var(--cream); color: var(--paper-ink); border-color: var(--cream); }
+.placebtn:focus-visible { outline: 3px solid var(--gold); outline-offset: 2px; }
+/* 단서 속 낯선 장소 말: 점선 밑줄, 누르면 뜻 쪽지 */
+.term { text-decoration: underline dotted 1.5px; text-underline-offset: 3px; text-decoration-color: #b3372a; cursor: help; padding: 3px 0; border-radius: 4px; }
+.term.on { background: rgb(255 207 110 / .45); }
+.term:focus-visible { outline: 2px solid var(--gold); outline-offset: 1px; }
+.gpop { position: absolute; z-index: 30; width: min(260px, calc(100vw - 24px)); padding: 10px 30px 10px 12px; border-radius: 12px; background: #fffaf0; color: var(--paper-ink); box-shadow: 0 10px 24px rgb(0 0 0 / .35); font: 600 13.5px/1.5 var(--font-ui); animation: bubIn .18s ease both; }
+.gpop b { display: block; font: 800 16px/1.3 var(--font-title); margin-bottom: 2px; }
+.gpop small { display: block; margin-top: 6px; padding-top: 6px; border-top: 1px dashed #d9c7a3; font: 600 12.5px/1.45 var(--font-ui); color: #7a5c2e; }
+.gpop::before { content: ''; position: absolute; top: -7px; left: var(--ax, 30px); border: 7px solid transparent; border-top: 0; border-bottom-color: #fffaf0; }
+.gpop.up::before { top: auto; bottom: -7px; border: 7px solid transparent; border-bottom: 0; border-top-color: #fffaf0; }
+.gpop .x, .guide .x { position: absolute; top: 6px; right: 6px; width: 26px; height: 26px; border: 0; border-radius: 50%; background: none; color: #8a7658; font: 600 14px/1 var(--font-ui); cursor: pointer; }
+/* 판 강조(2초): 그 줄 전체 또는 1번 쪽 끝 — 은은한 흰 테두리 */
+.bed.zone { border-radius: 12px; outline: 2.5px solid rgb(255 255 255 / .9); outline-offset: -3px; box-shadow: 0 0 14px rgb(255 240 200 / .7), inset 0 0 10px rgb(255 240 200 / .45); }
+.bed .rowtag { position: absolute; z-index: 4; left: 2px; top: 50%; transform: translateY(-50%); padding: 4px 7px; border-radius: 99px; background: rgb(255 250 240 / .95); color: var(--paper-ink); font: 700 11.5px/1 var(--font-ui); white-space: nowrap; box-shadow: 0 2px 6px rgb(0 0 0 / .3); pointer-events: none; }
+.room .neartag { position: absolute; z-index: 7; left: 50%; top: 6px; transform: translateX(-50%); padding: 5px 10px; border-radius: 99px; background: var(--paper-ink); color: #fff3dc; font: 700 12.5px/1 var(--font-ui); white-space: nowrap; box-shadow: 0 2px 6px rgb(0 0 0 / .35); pointer-events: none; }
+/* 🧭 장소 안내 쪽지 (얼굴 칸 밑) */
+.guide { position: relative; margin-top: 10px; padding: 12px 14px; border-radius: 14px; background: #fffaf0; color: var(--paper-ink); font: 600 13.5px/1.55 var(--font-ui); display: grid; gap: 8px; box-shadow: 0 8px 18px rgb(0 0 0 / .25); }
+.guide[hidden] { display: none; }
+.guide .gh b { font: 800 16px/1.2 var(--font-title); }
+.guide p { margin: 0; }
+.guide .gz { border: 0; padding: 1px 3px; border-radius: 4px; background: none; color: #b3372a; font: inherit; text-decoration: underline dotted 1.5px; text-underline-offset: 3px; cursor: pointer; }
+.guide .gz:hover { background: rgb(255 207 110 / .35); }
+.dirs { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.dir { display: grid; gap: 4px; padding: 8px; border-radius: 10px; background: #f6ead0; font: 700 12.5px/1.3 var(--font-ui); }
+.dir small { font: 600 11.5px/1.35 var(--font-ui); color: #7a5c2e; }
+.mini { display: grid; grid-template-columns: repeat(4, 16px); gap: 3px; }
+.mini i { width: 16px; height: 12px; border-radius: 3px; background: #e2d2ad; }
+.mini i.a { background: #b3372a; } .mini i.b { background: #6b4fa0; }
+.guide .gw { margin: 0; padding: 8px 0 0; list-style: none; border-top: 1px dashed #d9c7a3; display: grid; gap: 4px; font: 600 12.5px/1.45 var(--font-ui); }
+.guide .gw b { color: #b3372a; margin-right: 4px; }
 .poster-mode .tray { margin-top: 0; gap: 8px; }
 .poster-mode .chip { gap: 8px; padding: 5px 14px 5px 5px; border: 2px solid rgb(255 243 220 / .35); background: rgb(0 0 0 / .18); color: var(--cream); font: 600 14px/1 var(--font-ui); }
 .poster-mode .chip .face { width: 34px; height: 34px; border-color: var(--cream); }
@@ -658,8 +691,9 @@ html.calm .bubble { animation: none !important; } /* 움직임 줄이기: 말풍
     <section class="field">
       <div class="stage" id="stage"><div class="room" id="room"><div class="beds" id="beds"></div></div></div>
       <div class="zoombar" id="zoombar"><button type="button" id="zoomOut" aria-label="판 작게">－</button><button type="button" id="zoomIn" aria-label="판 크게">＋</button></div>
-      <div class="trayhead"><b id="trayLeft"></b></div>
+      <div class="trayhead"><b id="trayLeft"></b><button type="button" class="placebtn" id="placeBtn" aria-expanded="false" aria-controls="guide">🧭 장소</button></div>
       <div class="tray" id="tray"></div>
+      <div class="guide" id="guide" hidden></div> <!-- 🧭 장소 안내: 줄 이름·기준점·방향 말 (정답 자리는 안 보임) -->
       <div class="nudgebox" id="nudgeBox" hidden aria-live="polite"></div> <!-- 안내·실마리는 얼굴 칸 아래: 판 바로 밑에 두면 얼굴 칸이 화면 밖으로 밀림 -->
       <p class="casenote" id="caseNote"></p>
     </section>
@@ -726,6 +760,7 @@ html.calm .bubble { animation: none !important; } /* 움직임 줄이기: 말풍
       <li>아래에서 인물을 고르고, 단서에 맞는 자리를 눌러 앉혀요. 빈자리를 먼저 누르고 인물을 골라도 돼요.</li>
       <li>맞으면 그 자리에 고정되고, 틀리면 도깨비가 송편을 하나 먹어요. 다 먹히면 엽전이나 광고로 새로 쪄서 이어 할 수 있어요.</li>
       <li>단서를 누르면 거기 이름이 나온 사람이 반짝여요. 다 맞힌 단서는 아래로 내려가요.</li>
+      <li>단서 속 밑줄 친 장소 말(툇마루·사립문 같은)을 누르면 뜻을, 🧭 장소를 누르면 판의 줄 이름과 방향 말(바로 옆·맞은편·더 가깝다·양쪽 끝)을 알려 줘요.</li>
       <li>모두 앉히면 범인 단서가 열려요. 단서를 보고 판에서 범인을 눌러 지목해요. 틀리면 도깨비가 송편을 하나 먹어요.</li>
       <li>막히면 💡 힌트를 눌러 보세요. 처음 한 번은 무료로, 누구를 어느 단서로 찾을지 알려 줘요. 별은 그대로예요.</li>
       <li>한 번 더 누르면 30냥이에요. 족집게로 그 사람을 콕 집어 앉혀 줘요(범인 찾기 때는 둘째 단서에 맞는 사람까지 표시). 대신 별 3개는 못 받아요.</li>
@@ -955,6 +990,99 @@ function culpritText(clue, phrase, ctx) {
 }
 
 const seatRc = s => { const m = /^r(\d+)c(\d+)$/.exec(s); return [+m[1], +m[2]]; };
+
+// ── glossary.js ──
+// 장소 용어 사전 (DOM 없음): 장소 30곳의 줄 이름·기준점·자리 말 가운데 어린이에게 낯선 말만. 쉬운 말(문·책상·창가 등)은 넣지 않는다.
+// 판의 어느 쪽인지는 여기 두지 않고 장소마다 계산한다(terms.placeTerms) — 같은 말이라도 장소마다 줄이 다르다.
+// { id, word, desc, aliases? } — word·aliases 가 장소 말(예: '툇마루 쪽') 안에 들어 있으면 그 말에 밑줄
+const GLOSSARY = [
+  { id: 'agungi', word: '아궁이', desc: '방을 데우거나 밥을 지으려고 불을 때던 구멍이에요.' },
+  { id: 'toenmaru', word: '툇마루', desc: '방 앞에 길게 붙어 있는 좁은 나무 마루예요. 걸터앉아 쉬던 곳이에요.' },
+  { id: 'doldam', word: '돌담', desc: '돌을 차곡차곡 쌓아 만든 담이에요.' },
+  { id: 'saripmun', word: '사립문', desc: '나뭇가지를 엮어 만든 작은 바깥문이에요.' },
+  { id: 'daecheong', word: '대청', desc: '집 한가운데 있는 넓은 마루예요. 식구들이 모이던 곳이에요.' },
+  { id: 'jangdokdae', word: '장독대', desc: '간장·된장을 담은 항아리(장독)를 모아 두는 곳이에요.' },
+  { id: 'yeotgage', word: '엿가게', desc: '엿(쌀로 만든 달고 끈적한 옛날 과자)을 파는 가게예요.' },
+  { id: 'jipsin', word: '짚신', desc: '볏짚으로 엮어 만든 옛날 신발이에요.' },
+  { id: 'myeongbu', word: '명부', desc: '사람 이름을 적어 둔 장부예요.' },
+  { id: 'dukgil', word: '둑길', desc: '강물이 넘치지 않게 높이 쌓은 둑 위로 난 길이에요.' },
+  { id: 'gotgam', word: '곶감', desc: '껍질을 벗긴 감을 말려 쫀득하게 만든 간식이에요.' },
+  { id: 'ssalgama', word: '쌀가마', desc: '쌀을 가득 담은 큰 짚 자루(가마니)예요.' },
+  { id: 'gyesu', word: '계수나무', desc: '옛이야기에서 달나라에 있다는 나무예요.' },
+  { id: 'tteokbanga', word: '떡방아', desc: '떡을 만들려고 쌀을 찧는 방아예요.' },
+  { id: 'bulgama', word: '불가마', desc: '뜨겁게 불을 때서 땀을 빼는 찜질방이에요.' },
+  { id: 'sikhye', word: '식혜', desc: '밥알이 동동 뜨는 달콤한 쌀 음료예요.' },
+  { id: 'chorye', word: '초례상', desc: '옛날 혼례 때 신랑과 신부 사이에 차려 놓는 상이에요.' },
+  { id: 'hyeonpan', word: '현판', desc: '건물 이름을 써서 문 위에 걸어 두는 나무판이에요.' },
+  { id: 'solsup', word: '솔숲', desc: '소나무가 우거진 숲이에요.' },
+  { id: 'neoreok', word: '너럭바위', desc: '넓고 평평하게 펼쳐진 큰 바위예요.' },
+  { id: 'chorong', word: '초롱', desc: '안에 촛불을 넣어 들고 다니는 등이에요.' },
+  { id: 'yakjang', word: '약장', desc: '약재를 나눠 담는 작은 서랍이 많은 장이에요.' },
+  { id: 'yaktanggi', word: '약탕기', desc: '한약을 달이는 그릇이에요.' },
+  { id: 'umul', word: '우물', desc: '땅을 깊이 파서 물을 길어 쓰던 곳이에요.' },
+  { id: 'ppallaetdol', word: '빨랫돌', desc: '빨래를 올려놓고 방망이로 두드려 빨던 넓적한 돌이에요.' },
+  { id: 'okjwa', word: '옥좌', desc: '임금이 앉는 자리예요.' },
+  { id: 'wondumak', word: '원두막', desc: '참외·수박밭을 지키려고 높다랗게 지은 작은 집이에요.' },
+  { id: 'gaeul', word: '개울', desc: '골짜기나 들에 흐르는 작은 시냇물이에요.' },
+  { id: 'jultagi', word: '줄타기', desc: '높이 맨 줄 위를 걸으며 재주를 부리는 놀이예요.' },
+  { id: 'seonang', word: '서낭나무', desc: '마을을 지켜 준다고 믿던 큰 나무예요.' },
+  { id: 'byeongpung', word: '병풍', desc: '그림이나 글씨가 있는, 접었다 폈다 하는 칸막이예요.' },
+  { id: 'seomdol', word: '섬돌', desc: '마루에 오르내릴 때 디디는 돌이에요. 신발을 벗어 두는 곳이에요.' },
+  { id: 'jinggeom', word: '징검다리', desc: '개울에 돌을 띄엄띄엄 놓아 밟고 건너게 만든 다리예요.' },
+  { id: 'gwana', word: '관아', desc: '옛날 고을의 사또가 일하던 관청이에요.' },
+  { id: 'narutteo', word: '나루터', desc: '나룻배가 사람을 태우고 내려 주는 곳이에요.' },
+  { id: 'gotgan', word: '곳간', desc: '곡식이나 살림살이를 넣어 두는 창고예요.' },
+  { id: 'dongajul', word: '동아줄', desc: '굵고 튼튼하게 꼰 줄이에요.' },
+  { id: 'odumak', word: '오두막', desc: '작고 허름한 집이에요.' },
+  { id: 'yakbang', word: '약방', desc: '옛날에 약을 짓고 팔던 가게예요.' },
+  { id: 'gosat', word: '고샅길', desc: '마을 안의 좁은 골목길이에요.' },
+  { id: 'batdureong', word: '밭두렁', desc: '밭과 밭 사이에 흙을 쌓아 만든 좁은 길이에요.' },
+  { id: 'sotdae', word: '솟대', desc: '긴 장대 끝에 나무로 깎은 새를 올려 마을 어귀에 세운 것이에요.' },
+  { id: 'gogaetgil', word: '고갯길', desc: '산이나 언덕을 넘어가는 길이에요.' },
+  { id: 'jungmun', word: '중문', desc: '대문 안쪽에 하나 더 있는 문이에요.' },
+  { id: 'meongseok', word: '멍석', desc: '짚으로 엮어 만든 큰 깔개예요.' },
+  { id: 'geolsang', word: '걸상', desc: '여럿이 걸터앉는 긴 의자예요.' },
+  { id: 'geuruteogi', word: '그루터기', desc: '나무를 베고 남은 밑동이에요.' },
+  { id: 'dotjari', word: '돗자리', desc: '왕골 같은 풀을 엮어 만든 깔개예요.' },
+  { id: 'jipbangseok', word: '짚방석', desc: '짚으로 엮어 만든 방석이에요.' },
+  { id: 'jwapan', word: '좌판', desc: '물건을 벌여 놓고 파는 판이에요.' },
+  { id: 'narutbae', word: '나룻배', desc: '강을 건네주는 작은 배예요.' },
+  { id: 'muldongi', word: '물동이', desc: '물을 길어 나르던 둥근 항아리예요.' },
+  { id: 'pyeongsang', word: '평상', desc: '나무로 짠 넓고 평평한 앉을 자리예요.' },
+  { id: 'boryo', word: '보료', desc: '방바닥에 까는 두툼하고 푹신한 요예요.' },
+  { id: 'yeonip', word: '연잎', desc: '연꽃의 넓고 둥근 잎이에요.' },
+];
+
+// ── terms.js ──
+// 단서 속 장소 말(툇마루 쪽·사립문·보료…)에 뜻 쪽지를 붙이고 판의 어느 쪽인지 잇는다 (DOM 없음).
+// 판 위치는 줄 전체(줄 이름) 또는 1번 쪽 끝(기준점) 단위라 누가 어디 앉는지는 드러나지 않는다. 자리 말은 뜻만.
+
+/** placeTerms(place, rows, glossary) → [{ phrase, id, word, desc, zone }] — 이 판의 장소 말 중 사전에 있는 것.
+ *  zone = { kind: 'row', r } | { kind: 'near' } | null(자리 말) */
+function placeTerms(place, rows, glossary) {
+  const find = phrase => glossary.find(g => [g.word, ...(g.aliases || [])].some(w => phrase.includes(w)));
+  const out = [];
+  const add = (phrase, zone) => { const g = phrase && find(phrase); if (g) out.push({ phrase, id: g.id, word: g.word, desc: g.desc, zone }); };
+  rowNames(place.rowName, rows).forEach((name, r) => add(name, { kind: 'row', r }));
+  add(place.near, { kind: 'near' });
+  add(place.seatWord, null);
+  return out;
+}
+
+/** markTerms(text, terms) → [{ text } | { text, term }] — 글을 장소 말 기준으로 자른다(긴 말 먼저, 겹치지 않게) */
+function markTerms(text, terms) {
+  const list = [...terms].sort((a, b) => b.phrase.length - a.phrase.length), out = [];
+  let rest = text;
+  while (rest) {
+    let hit = null;
+    for (const t of list) { const i = rest.indexOf(t.phrase); if (i >= 0 && (!hit || i < hit.i)) hit = { i, t }; }
+    if (!hit) { out.push({ text: rest }); break; }
+    if (hit.i) out.push({ text: rest.slice(0, hit.i) });
+    out.push({ text: hit.t.phrase, term: hit.t });
+    rest = rest.slice(hit.i + hit.t.phrase.length);
+  }
+  return out;
+}
 
 // ── deduce.js ──
 // 사람처럼 풀기: 찍지 않고 단서만으로 끝까지 풀리는지 본다 (생성기·검사기·게임이 같이 쓴다).
@@ -1469,6 +1597,8 @@ function revealWalk(variant, board, roles) {
 
 
 
+
+
 const img = name => 'assets/' + name; // 그림 주소 (묶음 단독 파일에서는 그림 데이터로 바뀜)
 const $ = s => document.querySelector(s);
 const CHAR = Object.fromEntries(CHARACTERS.map(c => [c.id, c]));
@@ -1517,7 +1647,7 @@ function sfx(kind) {
 const buzz = () => { if (FX_READY && settings.vibe && navigator.vibrate) navigator.vibrate(120); };
 
 // ---------- 지금 판 ----------
-let EP, RUN, BOARD, STAGE, NAMES = {}, TEXT = { clues: [], spoken: [], culprit: [] }, trayOrder = [];
+let EP, RUN, BOARD, STAGE, NAMES = {}, TEXT = { clues: [], spoken: [], culprit: [] }, trayOrder = [], TERMS = [];
 const ui = { list: false, group: null, book: false, shelf: null, open: new Set(), pick: null, lost: null, flash: null, shown: false, tick: 0, run: 0, skip: false, zoom: 1, nudge: null, tut: false };
 const variant = () => EP.variants[RUN.v];
 const who = role => ({ name: NAMES[role], face: EP.cast.find(c => c.role === role).char });
@@ -1690,6 +1820,7 @@ function start(id) {
   room.classList.toggle('rotLast', !!STAGE.rotateLastRow && EP.board.rows > 1);
   room.setAttribute('aria-label', `${EP.title} 자리 배치도`);
   boardCloud();
+  TERMS = placeTerms(STAGE.place, EP.board.rows, GLOSSARY); // 이 판의 낯선 장소 말(단서 밑줄·🧭 장소 안내)
   const big = BOARD.seats.length >= 12;
   $('#stage').classList.toggle('big', big); $('#zoombar').classList.toggle('on', big && matchMedia('(max-width: 760px)').matches);
   setZoom(1);
@@ -1716,7 +1847,7 @@ function reset() {
   // 점점 열리는 단서: 처음엔 자리 1~2개를 맞힐 만큼만, 맞게 앉히면 새 단서가 하나씩 메모에 (계획이 없는 판은 지금처럼 다 보임)
   const plan = revealStart(variant(), BOARD, EP.cast.map(c => c.role)), first = plan ? plan.first : variant().clues.map((_, i) => i);
   trayOrder = shuffle(EP.cast.map(c => c.role), rnd);
-  Object.assign(ui, { pick: null, seat: null, lost: null, flash: null, shown: false, nudge: null, tut, told: [], nb: 'case', nbNew: false, holdHunt: false, talk: null, suspect: null,
+  Object.assign(ui, { pick: null, seat: null, lost: null, flash: null, shown: false, nudge: null, tut, told: [], nb: 'case', nbNew: false, guide: false, zone: null, termOn: null, holdHunt: false, talk: null, suspect: null,
     plan, heard: tut ? [...first] : shuffle([...first], rnd), said: {}, fresh: null });
   retext();
   drawCase();
@@ -1744,15 +1875,22 @@ function render() {
   const nv = nudgeView(), over = ui.shown || (allSeated(RUN) && !needAccuse(RUN)); // over: 진실 화면 — 💬 표시 없음
   $('#beds').innerHTML = BOARD.seats.map(s => {
     const role = seatOf(s), p = role && who(role), [r, c] = BOARD.rc(s);
+    const z = ui.zone && (ui.zone.kind === 'row' ? r === ui.zone.r : c === 0); // 장소 말·장소 안내: 그 줄 전체 또는 1번 쪽 끝
     const cls = ['bed', r === last ? 'last' : '', p ? 'lock' : 'empty', ui.pick && !p ? 'target' : '', ui.seat === s ? 'picked' : '', ui.flash === s ? 'justok' : '', nv.bed[s] || '',
-      ui.talk === s ? 'talking' : '', role && role === ui.suspect ? 'chosen' : ''].join(' ');
+      ui.talk === s ? 'talking' : '', role && role === ui.suspect ? 'chosen' : '', z ? 'zone' : ''].join(' ');
     const label = `${rowNames(STAGE.place.rowName, EP.board.rows)[r]} ${c + 1}번 ${STAGE.place.seatWord}${p ? `, ${p.name}` : ', 비어 있음'}`;
     return `<div class="${cls}" data-bed="${s}" role="button" tabindex="0" aria-label="${label}">
       ${p ? `<span class="who">${pic(p)}<span class="nm">${p.name}</span></span>` : ui.seat === s ? '<span class="ask" aria-hidden="true">?</span>' : ''}
       ${role && ui.told.includes(role) && !over ? '<span class="talk" aria-hidden="true">💬</span>' : ''}
       ${s === keySeat ? `<span class="apple" aria-hidden="true">${EP.key.img ? `<img src="${img(EP.key.img)}" alt="">` : EP.key.icon}</span>` : ''}
+      ${ui.guide && c === 0 && EP.board.rows > 1 ? `<span class="rowtag" aria-hidden="true">${rowNames(STAGE.place.rowName, EP.board.rows)[r]}</span>` : ''}
       <span class="no">${c + 1}</span></div>`;
   }).join('');
+  $('#room').querySelector('.neartag')?.remove();
+  if (ui.guide) $('#room').insertAdjacentHTML('beforeend', `<span class="neartag" aria-hidden="true">⬅ ${STAGE.place.near} 쪽 · 1번이 ${STAGE.place.near} 바로 앞</span>`);
+  $('#placeBtn').classList.toggle('on', ui.guide); $('#placeBtn').setAttribute('aria-expanded', ui.guide);
+  $('#guide').hidden = !ui.guide;
+  if (ui.guide) $('#guide').innerHTML = guideHtml();
   const left = EP.cast.filter(c => !RUN.at[c.role]).length;
   const hunting = needAccuse(RUN) && !ui.holdHunt; // 범인 찾기: 이제 쓸 일 없는 얼굴 칸 자리에 누른 사람 카드
   const seatName = s => { const [r, c] = BOARD.rc(s); return `${rowNames(STAGE.place.rowName, EP.board.rows)[r]} ${c + 1}번 ${STAGE.place.seatWord}`; };
@@ -1770,7 +1908,7 @@ function render() {
   const todo = rows.filter(r => !r.pass).sort((x, y) => (y.i === ui.fresh) - (x.i === ui.fresh));
   $('#clues').innerHTML = [...todo, ...rows.filter(r => r.pass)].map(({ i, ready, pass }) => {
     const by = saidBy[i], src = by ? `<img class="face src" src="${img(`face_${who(by).face}.webp`)}" alt="${NAMES[by]}${josa(NAMES[by], '이/가')} 말해 줌">` : '';
-    return `<div class="clue ${ready ? (pass ? 'ok' : 'no') : ''}${nv.clue.has(i) ? ' look' : ''}${i === ui.fresh ? ' fresh' : ''}" data-clue="${i}" role="button" tabindex="0"><span class="st">${ready ? (pass ? '✓' : '✕') : ui.heard.indexOf(i) + 1}</span><div><span>${src}${TEXT.clues[i]}${i === ui.fresh ? '<span class="new">새로</span>' : ''}</span></div></div>`;
+    return `<div class="clue ${ready ? (pass ? 'ok' : 'no') : ''}${nv.clue.has(i) ? ' look' : ''}${i === ui.fresh ? ' fresh' : ''}" data-clue="${i}" role="button" tabindex="0"><span class="st">${ready ? (pass ? '✓' : '✕') : ui.heard.indexOf(i) + 1}</span><div><span>${src}${T(TEXT.clues[i])}${i === ui.fresh ? '<span class="new">새로</span>' : ''}</span></div></div>`;
   }).join('') + (later ? `<div class="clue later"><span class="st">🔒</span><div><span>아직 못 들은 단서 ${later}개 · 맞게 앉히면 하나씩 메모에 적혀요</span></div></div>` : '');
   $('#hearts').innerHTML = CAKES.map((f, i) => `<span class="cake${i >= RUN.hearts ? ' gone' : ''}"><img src="${img(f)}" alt=""></span>`).join(''); // 먹힌 자리는 흐린 송편 + 빈 접시
   $('#hearts').setAttribute('aria-label', `남은 송편 ${RUN.hearts}개`);
@@ -1786,7 +1924,7 @@ function render() {
   $('#suspect').classList.toggle('fresh', reveal);
   $('#suspect').innerHTML = `<div class="sh">🔎 ${phrase}${josa(phrase, '은/는')} 누구?</div>`
     + (done ? TEXT.culprit.map((t, i) => { const story = variant().culprit[i]?.kind === 'story'; // 📜 그날 이야기 단서: 사건의 이야기 줄로 좁힘(폰은 메모장 사건 장으로 넘기는 버튼)
-      return `<div class="clue sus${story ? ' story' : ''}${nv.sus.has(i) ? ' look' : ''}" data-sus="${i}" role="button" tabindex="0" style="--k:${i}"><span class="st">${story ? '📜' : '?'}</span><div><span>${story ? '<b class="stg">그날 이야기</b> ' : ''}${t}</span>${story ? '<button type="button" class="tocase" data-nb="case">📜 사건 장 보기</button>' : ''}</div></div>`; }).join('')
+      return `<div class="clue sus${story ? ' story' : ''}${nv.sus.has(i) ? ' look' : ''}" data-sus="${i}" role="button" tabindex="0" style="--k:${i}"><span class="st">${story ? '📜' : '?'}</span><div><span>${story ? '<b class="stg">그날 이야기</b> ' : ''}${T(t)}</span>${story ? '<button type="button" class="tocase" data-nb="case">📜 사건 장 보기</button>' : ''}</div></div>`; }).join('')
       : `<div class="sealed">🔒 자리를 모두 맞히면 범인 단서 ${TEXT.culprit.length}개가 열려요</div>`)
     + (accusing ? `<div class="accuse-cta" style="--k:${TEXT.culprit.length}">판에서 그 사람을 눌러 지목하세요</div>` : '');
   if (reveal) { ui.nb = 'memo'; huntBanner(); } // 폰 메모장: 범인 단서가 열리면 단서 장으로
@@ -1805,6 +1943,55 @@ function render() {
   $('#nudgeBox').hidden = !nv.html || solved;
   if (nv.html) $('#nudgeBox').innerHTML = nv.html;
   if (solved && !ui.shown) { ui.shown = true; drawCase(); onSolved(); } // 진실 화면에서는 폰도 그날 이야기를 다 펼침
+}
+
+// ---------- 장소 말 뜻 쪽지 · 🧭 장소 안내 ----------
+// 단서 속 낯선 장소 말에 점선 밑줄(누르면 뜻 + 판의 그 줄/1번 쪽 끝을 2초 강조). 강조는 줄·끝 단위라 정답 자리는 안 드러남
+const esc = s => s.replace(/[&<>"]/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[ch]);
+const T = text => markTerms(text, TERMS).map(p => p.term
+  ? `<span class="term${ui.termOn === p.term.id ? ' on' : ''}" data-term="${p.term.id}" role="button" tabindex="0">${esc(p.text)}</span>` : esc(p.text)).join('');
+const rowSpot = r => { const n = EP.board.rows; return r === 0 ? (n === 2 ? '윗줄' : '맨 윗줄') : r === n - 1 ? (n === 2 ? '아랫줄' : '맨 아랫줄') : n === 3 ? '가운데 줄' : `위에서 ${['', '둘째', '셋째'][r]} 줄`; };
+const zoneWhere = z => z.kind === 'row' ? `판에서는 ${rowSpot(z.r)}이에요.` : `판에서는 1번 자리 쪽 끝이에요(1번이 ${STAGE.place.near} 바로 앞).`;
+function flashZone(zone) {
+  ui.zone = zone; render();
+  clearTimeout(flashZone.t); flashZone.t = setTimeout(() => { ui.zone = null; if (!$('#play').hidden) render(); }, 2000);
+}
+function closeTerm() {
+  document.querySelectorAll('.gpop').forEach(x => x.remove());
+  document.querySelectorAll('.term.on').forEach(x => x.classList.remove('on'));
+  ui.termOn = null;
+}
+function showTerm(el) {
+  const t = TERMS.find(x => x.id === el.dataset.term);
+  if (!t) return;
+  closeTerm();
+  const pop = document.createElement('div');
+  pop.className = 'gpop'; pop.setAttribute('role', 'dialog'); pop.setAttribute('aria-label', `${t.word} 뜻`);
+  pop.innerHTML = `<button type="button" class="x" data-term-close aria-label="닫기">✕</button><b>${t.word}</b>${t.desc}${t.zone ? `<small>📍 ${zoneWhere(t.zone)}</small>` : ''}`;
+  document.body.append(pop);
+  const r = el.getBoundingClientRect(), w = pop.offsetWidth, h = pop.offsetHeight, vw = document.documentElement.clientWidth;
+  const left = Math.min(Math.max(12, r.left - 20), vw - w - 12), up = r.bottom + h + 16 > innerHeight && r.top > h + 16; // 아래 자리가 모자라면 위로
+  pop.classList.toggle('up', up);
+  pop.style.left = `${left + scrollX}px`; pop.style.top = `${(up ? r.top - h - 9 : r.bottom + 9) + scrollY}px`;
+  pop.style.setProperty('--ax', `${Math.min(Math.max(14, r.left - left + 10), w - 26)}px`);
+  ui.termOn = t.id; el.classList.add('on');
+  if (t.zone) flashZone(t.zone);
+}
+// 🧭 장소 안내 쪽지: 줄 이름·기준점(누르면 판에서 강조), 번호 뜻, 방향 말 그림, 이 판의 낯선 말 뜻
+function guideHtml() {
+  const p = STAGE.place, n = EP.board.rows, names = rowNames(p.rowName, n);
+  const chip = (label, zone) => `<button type="button" class="gz" data-zone="${zone}">${label}</button>`;
+  const rows = n > 1 ? names.map((nm, r) => nm === rowSpot(r) ? '' : `${rowSpot(r)}은 ${chip(nm, `row:${r}`)}`).filter(Boolean) : [];
+  const mini = on => `<span class="mini">${Array.from({ length: 8 }, (_, k) => `<i class="${on[k] || ''}"></i>`).join('')}</span>`;
+  const dirs = [['바로 옆', { 1: 'a', 2: 'b' }, '같은 줄, 번호 하나 차이'],
+    ...(n > 1 ? [[p.facingWord, { 1: 'a', 5: 'b' }, '같은 번호, 바로 위아래 줄']] : []),
+    [`${p.near}에 더 가깝다`, { 0: 'a', 2: 'b' }, '번호가 더 작아요'],
+    ['양쪽 끝', { 0: 'a', 3: 'a', 4: 'a', 7: 'a' }, '1번이나 마지막 번호']];
+  const words = TERMS.map(t => `<li><b>${t.word}</b> ${t.desc}</li>`).join('');
+  return `<div class="gh"><b>🧭 ${STAGE.name}</b><button type="button" class="x" data-guide aria-label="장소 안내 닫기">✕</button></div>`
+    + `<p>${rows.length ? `${rows.join(', ')}이에요. ` : ''}번호 1이 ${chip(p.near, 'near')} 바로 앞이고, 번호가 클수록 ${p.near}에서 멀어요.</p>`
+    + `<div class="dirs">${dirs.map(([h, on, s]) => `<div class="dir">${h}${mini(on)}<small>${s}</small></div>`).join('')}</div>`
+    + (words ? `<ul class="gw">${words}</ul>` : '');
 }
 
 // ---------- 💡 힌트(생각의 실마리 · 족집게) · 첫 편 안내판 ----------
@@ -1840,11 +2027,11 @@ function nudgeView() {
     if (!level) { view.html = box(tutHead, `<p>범인 단서 두 개가 열렸어요(단서 메모 아래). 두 단서에 모두 맞는 사람을 판에서 눌러 지목해요.${story ? ' 📜 그날 이야기 단서는 사건의 그날 이야기를 다시 읽어 보면 누구 얘기인지 알 수 있어요.' : ''} 막히면 💡 힌트를 눌러 보세요.</p>`); return view; }
     sets[0].forEach(s => { view.bed[s] = 'maybe'; });
     view.sus.add(0);
-    let body = `<p>첫째 범인 단서에 맞는 사람은 판에 표시한 ${sets[0].length}명이에요.</p><q>${TEXT.culprit[0]}</q>`;
+    let body = `<p>첫째 범인 단서에 맞는 사람은 판에 표시한 ${sets[0].length}명이에요.</p><q>${T(TEXT.culprit[0])}</q>`;
     if (level >= 2) {
       sets.slice(1).flat().forEach(s => { view.bed[s] = `${view.bed[s] || ''} maybe2`.trim(); });
       sets.slice(1).forEach((_, k) => view.sus.add(k + 1));
-      body += `<p>${story ? '그날 이야기 단서' : '둘째 단서'}에 맞는 사람은 파란 테두리로 표시했어요. 두 표시가 겹치는 사람이 범인이에요.</p>${TEXT.culprit.slice(1).map(t => `<q>${t}</q>`).join('')}`;
+      body += `<p>${story ? '그날 이야기 단서' : '둘째 단서'}에 맞는 사람은 파란 테두리로 표시했어요. 두 표시가 겹치는 사람이 범인이에요.</p>${TEXT.culprit.slice(1).map(t => `<q>${T(t)}</q>`).join('')}`;
     } else body += '<p>이 중에서 둘째 단서에도 맞는 사람을 찾아보세요.</p>';
     view.html = box(tutHead || '💡 생각의 실마리', body, level < 2, `${story ? '이야기' : '둘째'} 단서도 표시`);
     return view;
@@ -1858,10 +2045,10 @@ function nudgeView() {
   st.clues.forEach(i => view.clue.add(i));
   partners.forEach(p => { view.bed[RUN.at[p]] = 'anchor'; });
   let body = placed === 0 && ui.tut
-    ? `<p>판의 위 줄은 '${rowNames(STAGE.place.rowName, EP.board.rows)[0]}', 아래 줄은 '${rowNames(STAGE.place.rowName, EP.board.rows).at(-1)}'이에요. 자리 번호 1이 ${STAGE.place.near} 바로 앞이고, 번호가 클수록 ${STAGE.place.near}에서 멀어요. 얼굴을 고른 뒤 자리를 눌러도, 자리를 먼저 누른 뒤 얼굴을 골라도 앉혀져요. 이번 판은 연습이라 틀려도 도깨비가 송편을 먹지 않아요.</p>`
+    ? `<p>판의 위 줄은 '${rowNames(STAGE.place.rowName, EP.board.rows)[0]}', 아래 줄은 '${rowNames(STAGE.place.rowName, EP.board.rows).at(-1)}'이에요. 자리 번호 1이 ${STAGE.place.near} 바로 앞이고, 번호가 클수록 ${STAGE.place.near}에서 멀어요. 모르는 말은 밑줄을, 줄 이름은 🧭 장소를 눌러 보세요. 얼굴을 고른 뒤 자리를 눌러도, 자리를 먼저 누른 뒤 얼굴을 골라도 앉혀져요. 이번 판은 연습이라 틀려도 도깨비가 송편을 먹지 않아요.</p>`
     : placed === 1 && ui.tut ? '<p>메모의 단서를 누르면 거기 이름이 나온 사람이 판이나 얼굴 칸에서 반짝여요.</p>' : '';
   body += st.kind === 'last' ? `<p>${NAMES[r]}만 남았어요. 남은 빈자리를 찾아봐요.</p>`
-    : `<p><b>${fill(`{${r}|의}`, NAMES)} 자리</b>부터 찾아봐요.${partners.length ? ` 이미 앉은 ${nameList(partners)}의 자리를 기준으로 보세요.` : ''}</p>${st.clues.map(i => `<q>${TEXT.clues[i]}</q>`).join('')}`;
+    : `<p><b>${fill(`{${r}|의}`, NAMES)} 자리</b>부터 찾아봐요.${partners.length ? ` 이미 앉은 ${nameList(partners)}의 자리를 기준으로 보세요.` : ''}</p>${st.clues.map(i => `<q>${T(TEXT.clues[i])}</q>`).join('')}`;
   if (level >= 2) {
     if (st.kind !== 'last') st.match.forEach(s => { view.bed[s] = seatOf(s) ? 'nope' : 'maybe'; });
     view.bed[st.free] = 'maybe';
@@ -2179,8 +2366,13 @@ function flip(on) {
 // ---------- 입력 ----------
 document.addEventListener('click', e => {
   const t = e.target;
+  if (!t.closest('.gpop') && !t.closest('.term')) closeTerm(); // 뜻 쪽지: 바깥을 누르면 닫힘
   const p = t.closest('[data-person]'), b = t.closest('[data-bed]'), c = t.closest('[data-clue]'), su = t.closest('[data-sus]');
   if (t.closest('[data-accuse]')) { const r = t.closest('[data-accuse]').dataset.accuse; doAccuse(r, RUN.at[r]); }
+  else if (t.closest('.term')) showTerm(t.closest('.term')); // 단서 속 장소 말: 뜻 쪽지(그 사람 반짝이기 대신)
+  else if (t.closest('[data-term-close]')) closeTerm();
+  else if (t.closest('[data-guide]')) { ui.guide = !ui.guide; render(); }
+  else if (t.closest('[data-zone]')) { const [k, r] = t.closest('[data-zone]').dataset.zone.split(':'); flashZone(k === 'row' ? { kind: 'row', r: +r } : { kind: 'near' }); }
   else if (t.closest('[data-nb]')) { // 폰 메모장 장 넘기기(범인 단서의 '사건 장 보기' 포함)
     ui.nb = t.closest('[data-nb]').dataset.nb; if (ui.nb === 'memo') ui.nbNew = false; render();
     $('#nbTabs').scrollIntoView({ behavior: isCalm() ? 'auto' : 'smooth', block: 'nearest' });
@@ -2220,6 +2412,7 @@ $('#toTruth').addEventListener('click', () => flip(true));
 $('#toClues').addEventListener('click', () => flip(false));
 $('#reset').addEventListener('click', reset);
 $('#nudge').addEventListener('click', doHelp);
+$('#placeBtn').addEventListener('click', () => { ui.guide = !ui.guide; render(); if (ui.guide && matchMedia('(max-width: 760px)').matches) $('#guide').scrollIntoView({ behavior: isCalm() ? 'auto' : 'smooth', block: 'nearest' }); });
 $('#back').addEventListener('click', showHome);
 $('#toHome').addEventListener('click', showHome);
 $('#zoomIn').addEventListener('click', () => setZoom(1.6));
@@ -2267,7 +2460,7 @@ $('#settings').addEventListener('click', e => {
   if (t) { settings[t.dataset.set] = !settings[t.dataset.set]; applySettings(); if (t.dataset.set === 'sound' && settings.sound) sfx('tap'); }
   if (g) { settings[g.closest('[data-seg]').dataset.seg] = g.dataset.v; applySettings(); }
 });
-document.addEventListener('keydown', e => { if (e.key === 'Escape' && !$('#settings').hidden) closeSettings(); else if (e.key === 'Escape' && !$('#menu').hidden) { menu(false); $('#menuBtn').focus(); } });
+document.addEventListener('keydown', e => { if (e.key === 'Escape' && !$('#settings').hidden) closeSettings(); else if (e.key === 'Escape' && !$('#menu').hidden) { menu(false); $('#menuBtn').focus(); } else if (e.key === 'Escape') closeTerm(); });
 $('#menuBtn').addEventListener('click', () => menu($('#menu').hidden));
 $('#menuDim').addEventListener('click', () => menu(false));
 // 왼쪽 위 ←·오른쪽 위 ⚙/☰ 는 배경 위 테두리 버튼 — 내려 읽는 중엔 남색으로 채워 메모장·판 위에서도 보이게
