@@ -559,8 +559,28 @@ html.calm .bubble { animation: none !important; } /* 움직임 줄이기: 말풍
 .casenote .scenes li:last-child { animation: sceneIn .45s ease both; } /* 새로 쌓인 줄만 — 다시 그릴 때 위 줄들이 깜빡이지 않게 */
 .casenote .scenes li .face { width: 26px; height: 26px; border-radius: 50%; flex: none; object-fit: cover; }
 @keyframes sceneIn { from { opacity: 0; transform: translateY(-4px); } }
-.casenote .scenetog { display: none; margin: 8px 0 0; border: 0; border-radius: 99px; padding: 5px 11px; background: rgb(0 0 0 / .22); color: var(--cream); font: 600 12.5px/1 var(--font-ui); cursor: pointer; }
-@media (max-width: 760px) { .casenote .scenes.folded li:not(:last-child) { display: none; } .casenote .scenetog { display: inline-block; } } /* 폰: 최근 줄만, 누르면 펼침 */
+/* 폰 메모장: 판 밑 사건 칸 대신 메모장 첫 장(📜 사건) ↔ 📝 단서 메모를 탭으로 넘김. PC 는 양쪽 그대로 */
+.nbtabs, .casepage, .tocase { display: none; }
+@media (max-width: 760px) {
+  .field .casenote { display: none; }
+  .nbtabs { display: flex; gap: 6px; padding: 0 10px; margin-bottom: -24px; position: relative; z-index: 3; } /* .layout 간격(18px)을 메워 메모장 윗단에 붙임 */
+  .nbtabs[hidden] { display: none; }
+  .nbtabs button { flex: 1; border: 0; border-radius: 12px 12px 0 0; padding: 10px 10px 14px; font: 800 15px/1 var(--font-title); background: rgb(0 0 0 / .25); color: var(--cream); cursor: pointer; }
+  .nbtabs button[aria-selected="true"] { background: #f6ead0; color: var(--paper-ink); }
+  .nbtabs small { font: 600 12px/1 var(--font-ui); opacity: .75; margin-left: 4px; }
+  .nbtabs .newdot { display: inline-block; margin-left: 5px; padding: 2px 6px; border-radius: 99px; background: var(--no); color: #fff; font: 600 11px/1 var(--font-ui); vertical-align: 1px; }
+  .clues.oncase .page.front > :not(.casepage) { display: none; }
+  .clues.oncase .casepage { display: grid; gap: 8px; color: var(--paper-ink); }
+  .casepage h3 { margin: 0; height: var(--line); font: 800 21px/var(--line) var(--font-title); padding-left: 40px; }
+  .casepage .lead { margin: 0; padding: 0 6px 0 40px; font: 600 14.5px/1.6 var(--font-ui); }
+  .casepage .lead strong { color: #b3372a; font-weight: 800; }
+  .casepage .scenes { list-style: none; margin: 0; padding: 0 6px 0 8px; display: grid; gap: 8px; }
+  .casepage .scenes li { display: grid; grid-template-columns: 26px 1fr; gap: 10px; align-items: start; font: 600 14px/1.55 var(--font-ui); }
+  .casepage .scenes li .face { width: 26px; height: 26px; border-radius: 50%; object-fit: cover; }
+  .casepage .scenes li:last-child { animation: sceneIn .45s ease both; }
+  .casepage .wait { margin: 0; padding: 0 6px 0 40px; font: 600 13px/1.5 var(--font-ui); color: #8a7658; }
+  .tocase { display: inline-block; margin: 2px 0 4px; border: 0; border-radius: 99px; padding: 5px 11px; background: #6b4fa0; color: #fff; font: 600 12.5px/1 var(--font-ui); cursor: pointer; }
+}
 /* 점점 열리는 단서: 말해 준 사람 얼굴 · 방금 들은 단서 · 아직 못 들은 단서 수 · 말풍선 메모지 칸 */
 .clue .src { display: inline-block; width: 22px; height: 22px; border-width: 2px; vertical-align: -6px; margin-right: 5px; }
 .clue.fresh { background: rgb(255 207 110 / .35); }
@@ -631,9 +651,11 @@ html.calm .bubble { animation: none !important; } /* 움직임 줄이기: 말풍
       <p class="casenote" id="caseNote"></p>
     </section>
 
+    <div class="nbtabs" id="nbTabs" role="tablist" aria-label="메모장 장 고르기"></div> <!-- 폰만: 메모장 첫 장 📜 사건 ↔ 📝 단서 메모 (PC 는 판 밑 사건 칸 + 오른쪽 메모 양쪽) -->
     <aside class="clues" id="memo" aria-label="단서 메모">
       <div class="sheet">
         <div class="page front">
+          <div class="casepage" id="casePage"></div>
           <h2>단서 메모 <small id="countClue"></small></h2>
           <div id="clues"></div>
           <div class="suspect" id="suspect"></div>
@@ -1678,7 +1700,7 @@ function reset() {
   // 점점 열리는 단서: 처음엔 자리 1~2개를 맞힐 만큼만, 맞게 앉히면 새 단서가 하나씩 메모에 (계획이 없는 판은 지금처럼 다 보임)
   const plan = revealStart(variant(), BOARD, EP.cast.map(c => c.role)), first = plan ? plan.first : variant().clues.map((_, i) => i);
   trayOrder = shuffle(EP.cast.map(c => c.role), rnd);
-  Object.assign(ui, { pick: null, seat: null, lost: null, flash: null, shown: false, nudge: null, tut, told: [], scenesOpen: false, holdHunt: false, talk: null, suspect: null,
+  Object.assign(ui, { pick: null, seat: null, lost: null, flash: null, shown: false, nudge: null, tut, told: [], nb: 'case', nbNew: false, holdHunt: false, talk: null, suspect: null,
     plan, heard: tut ? [...first] : shuffle([...first], rnd), said: {}, fresh: null });
   retext();
   drawCase();
@@ -1747,12 +1769,15 @@ function render() {
   const reveal = accusing && !$('#app').classList.contains('accusing'); // 막 다 앉힌 그 순간 한 번만 연출
   $('#suspect').classList.toggle('fresh', reveal);
   $('#suspect').innerHTML = `<div class="sh">🔎 ${phrase}${josa(phrase, '은/는')} 누구?</div>`
-    + (done ? TEXT.culprit.map((t, i) => { const story = variant().culprit[i]?.kind === 'story'; // 📜 그날 이야기 단서: 사건 칸의 이야기 줄로 좁힘
-      return `<div class="clue sus${story ? ' story' : ''}${nv.sus.has(i) ? ' look' : ''}" data-sus="${i}" role="button" tabindex="0" style="--k:${i}"><span class="st">${story ? '📜' : '?'}</span><div><span>${story ? '<b class="stg">그날 이야기</b> ' : ''}${t}</span></div></div>`; }).join('')
+    + (done ? TEXT.culprit.map((t, i) => { const story = variant().culprit[i]?.kind === 'story'; // 📜 그날 이야기 단서: 사건의 이야기 줄로 좁힘(폰은 메모장 사건 장으로 넘기는 버튼)
+      return `<div class="clue sus${story ? ' story' : ''}${nv.sus.has(i) ? ' look' : ''}" data-sus="${i}" role="button" tabindex="0" style="--k:${i}"><span class="st">${story ? '📜' : '?'}</span><div><span>${story ? '<b class="stg">그날 이야기</b> ' : ''}${t}</span>${story ? '<button type="button" class="tocase" data-nb="case">📜 사건 장 보기</button>' : ''}</div></div>`; }).join('')
       : `<div class="sealed">🔒 자리를 모두 맞히면 범인 단서 ${TEXT.culprit.length}개가 열려요</div>`)
     + (accusing ? `<div class="accuse-cta" style="--k:${TEXT.culprit.length}">판에서 그 사람을 눌러 지목하세요</div>` : '');
-  if (reveal) huntBanner();
-  if (reveal && variant().culprit.some(c => c.kind === 'story') && !ui.scenesOpen) { ui.scenesOpen = true; drawCase(); } // 📜 이야기 단서: 사건 칸의 그날 이야기를 다 펼쳐 다시 읽게
+  if (reveal) { ui.nb = 'memo'; huntBanner(); } // 폰 메모장: 범인 단서가 열리면 단서 장으로
+  // 폰 메모장 탭: 첫 장 📜 사건 · 📝 단서 메모(들은 수, 사건 장을 보는 사이 새 단서가 오면 '새로')
+  $('#nbTabs').innerHTML = `<button type="button" role="tab" data-nb="case" aria-selected="${ui.nb === 'case'}">📜 사건</button>`
+    + `<button type="button" role="tab" data-nb="memo" aria-selected="${ui.nb !== 'case'}">📝 단서 메모<small>${ui.heard.length}개</small>${ui.nbNew && ui.nb === 'case' ? '<span class="newdot">새로</span>' : ''}</button>`;
+  $('#memo').classList.toggle('oncase', ui.nb === 'case');
   $('#app').classList.toggle('accusing', accusing);
   const solved = allSeated(RUN) && !realAcc;
   $('#app').classList.toggle('solved', solved);
@@ -1796,7 +1821,7 @@ function nudgeView() {
   if (accusing) {
     const sets = culpritSeats(variant().culprit, RUN.at, BOARD);
     const story = variant().culprit.some(c => c.kind === 'story');
-    if (!level) { view.html = box(tutHead, `<p>범인 단서 두 개가 열렸어요(단서 메모 아래). 두 단서에 모두 맞는 사람을 판에서 눌러 지목해요.${story ? ' 📜 그날 이야기 단서는 사건 칸의 그날 이야기를 다시 읽어 보면 누구 얘기인지 알 수 있어요.' : ''} 막히면 💡 힌트를 눌러 보세요.</p>`); return view; }
+    if (!level) { view.html = box(tutHead, `<p>범인 단서 두 개가 열렸어요(단서 메모 아래). 두 단서에 모두 맞는 사람을 판에서 눌러 지목해요.${story ? ' 📜 그날 이야기 단서는 사건의 그날 이야기를 다시 읽어 보면 누구 얘기인지 알 수 있어요.' : ''} 막히면 💡 힌트를 눌러 보세요.</p>`); return view; }
     sets[0].forEach(s => { view.bed[s] = 'maybe'; });
     view.sus.add(0);
     let body = `<p>첫째 범인 단서에 맞는 사람은 판에 표시한 ${sets[0].length}명이에요.</p><q>${TEXT.culprit[0]}</q>`;
@@ -1947,7 +1972,7 @@ function eatCake(i) {
 function tell(role, seat) {
   if (ui.told.includes(role)) return 0;
   const said = ui.plan ? talkFor(variant(), BOARD, EP.cast.map(c => c.role), ui.plan.order, ui.heard, RUN.at) : [];
-  if (said.length) { ui.heard.push(...said); ui.said[role] = said; ui.fresh = said.at(-1); retext(); }
+  if (said.length) { ui.heard.push(...said); ui.said[role] = said; ui.fresh = said.at(-1); retext(); if (ui.nb === 'case') ui.nbNew = true; }
   if (!EP.cast.find(c => c.role === role)?.scene) return said.length; // 이야기 줄이 없는 편(51화~)은 말풍선 없음
   ui.told.push(role); drawCase();
   ui.holdHunt = needAccuse(RUN); // 마지막 사람: 말풍선의 '범인 찾기' 버튼(또는 판·말풍선 누르기)으로 닫을 때까지 범인 찾기를 미룸
@@ -1976,12 +2001,13 @@ function closeTale() {
   document.querySelector('.bed.talking')?.classList.remove('talking');
   ui.talk = null;
 }
+// 사건 소개 + 맞힐 때마다 쌓이는 그날 이야기: PC 는 판 밑 사건 칸, 폰은 메모장 첫 장(📜 사건 장) — 둘 다 그려 두고 CSS 가 하나만 보임
 function drawCase() {
-  const has = EP.cast.some(c => c.scene), lines = sceneLines(EP.cast, ui.told, NAMES), folded = !ui.scenesOpen && !ui.shown;
-  $('#caseNote').innerHTML = `<span class="tag">📜 사건</span> ${ui.caseIntro}` + (!has ? ''
-    : !lines.length ? '<small class="scenehint">맞게 앉힐 때마다 그날 그 사람이 뭘 하고 있었는지 여기 한 줄씩 적혀요. 앉은 사람을 누르면 다시 볼 수 있어요.</small>'
-    : (lines.length > 1 && folded ? `<button type="button" class="scenetog" data-scenes>그날 이야기 ${lines.length}줄 ▾</button>` : '')
-      + `<ol class="scenes${folded ? ' folded' : ''}">${lines.map(l => `<li>${pic(who(l.role))}<span>${l.text}</span></li>`).join('')}</ol>`);
+  const has = EP.cast.some(c => c.scene), lines = sceneLines(EP.cast, ui.told, NAMES);
+  const wait = '맞게 앉힐 때마다 그날 그 사람이 뭘 하고 있었는지 여기 한 줄씩 적혀요. 앉은 사람을 누르면 다시 볼 수 있어요.';
+  const list = `<ol class="scenes">${lines.map(l => `<li>${pic(who(l.role))}<span>${l.text}</span></li>`).join('')}</ol>`;
+  $('#caseNote').innerHTML = `<span class="tag">📜 사건</span> ${ui.caseIntro}` + (!has ? '' : !lines.length ? `<small class="scenehint">${wait}</small>` : list);
+  $('#casePage').innerHTML = `<h3>📜 사건</h3><p class="lead">${ui.caseIntro}</p>` + (!has ? '' : !lines.length ? `<p class="wait">${wait}</p>` : list);
 }
 // 틀렸을 때 그 인물의 한마디 (2.2초)
 function quip(el, p, lines) {
@@ -2130,6 +2156,7 @@ function confetti(r) {
 }
 function flip(on) {
   $('#memo').classList.toggle('flipped', on);
+  $('#nbTabs').hidden = on; // 진실 장에서는 메모장 탭 숨김
   if (on && matchMedia('(max-width: 760px)').matches) $('#memo').scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
@@ -2138,6 +2165,10 @@ document.addEventListener('click', e => {
   const t = e.target;
   const p = t.closest('[data-person]'), b = t.closest('[data-bed]'), c = t.closest('[data-clue]'), su = t.closest('[data-sus]');
   if (t.closest('[data-accuse]')) { const r = t.closest('[data-accuse]').dataset.accuse; doAccuse(r, RUN.at[r]); }
+  else if (t.closest('[data-nb]')) { // 폰 메모장 장 넘기기(범인 단서의 '사건 장 보기' 포함)
+    ui.nb = t.closest('[data-nb]').dataset.nb; if (ui.nb === 'memo') ui.nbNew = false; render();
+    $('#nbTabs').scrollIntoView({ behavior: isCalm() ? 'auto' : 'smooth', block: 'nearest' });
+  }
   else if (t.closest('[data-sus-close]')) chooseSuspect(null);
   else if (t.closest('.bubble.tale')) { if (ui.holdHunt) releaseHunt(); else closeTale(); } // 말풍선(또는 그 안의 '범인 찾기')을 누르면 닫힘
   else if (p) tapPerson(p.dataset.person);
@@ -2158,7 +2189,6 @@ document.addEventListener('click', e => {
   else if (t.closest('#back2') && !t.closest('button')) ui.skip = true;
   else if (t.closest('[data-nudge-more]')) doHelp(); // 안내판은 무료 2단계, 아니면 30냥 힌트
   else if (t.closest('[data-nudge-close]')) { ui.nudge = { sig: nudgeSig(), level: -1, used: hintUsed() }; render(); }
-  else if (t.closest('[data-scenes]')) { ui.scenesOpen = true; drawCase(); }
 });
 document.addEventListener('keydown', e => {
   if (e.key !== 'Enter' && e.key !== ' ') return;
