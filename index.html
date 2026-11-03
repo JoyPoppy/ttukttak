@@ -315,7 +315,20 @@ body.poster-mode { background: radial-gradient(1100px 600px at 18% 8%, color-mix
 /* 진실 페이지: 한 줄씩 나타남 */
 .back .fade { opacity: 0; transform: translateY(6px); transition: opacity .4s, transform .4s; }
 .back .fade.show { opacity: 1; transform: none; }
-.back .teaser { margin: 4px 0; font: 800 15px/1.5 var(--font-title); color: #6b4fa0; }
+/* 진실 장 끝: 증거품 줄 + 다음 사건 카드(진실보다 작고 차분하게) */
+.back .evi { display: flex; align-items: center; gap: 10px; margin: 6px 0 2px; padding: 8px 10px; border-radius: 12px; background: rgb(255 255 255 / .55); border: 1.5px dashed #c9b48a; font: 600 13.5px/1.4 var(--font-ui); }
+.back .evi img { width: 44px; height: 44px; object-fit: contain; } .back .evi .emo { font-size: 32px; line-height: 1; }
+.back .evi b { display: block; font: 800 14.5px/1.3 var(--font-title); color: #6b4c1a; }
+.back .nextcard { margin: 8px 0 4px; padding: 10px 12px; border-radius: 12px; background: #f3e9d4; display: grid; gap: 6px; }
+.back .nextcard .nh { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; font: 600 12px/1.2 var(--font-ui); color: #8a7658; }
+.back .nextcard .nt { font: 800 17px/1.3 var(--font-title); color: #6b4fa0; }
+.back .nextcard .nk { font: 600 13.5px/1.4 var(--font-ui); color: var(--paper-ink); }
+.back .nextcard .faces { display: flex; flex-wrap: wrap; align-items: center; }
+.back .nextcard .faces img { width: 30px; height: 30px; border-radius: 50%; border: 2px solid #f3e9d4; margin-left: -6px; background: #fff; object-fit: cover; }
+.back .nextcard .faces img:first-child { margin-left: 0; }
+.back .nextcard .faces span { margin-left: 8px; font: 600 12px/1 var(--font-ui); color: #8a7658; }
+.back .nextnone { margin: 6px 0; font: 600 13.5px/1.4 var(--font-ui); color: #8a7658; }
+.nudgebox .tskip { margin-left: auto; margin-right: 4px; border: 1.5px solid #c9b48a; background: none; color: #7a5c2e; border-radius: 99px; padding: 4px 10px; font: 600 12px/1 var(--font-ui); cursor: pointer; }
 .result { display: grid; gap: 2px; }
 .result > div { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
 @media (prefers-reduced-motion: reduce) { .back .fade { transition: none; } .room { transition: none; } }
@@ -766,6 +779,7 @@ html.calm .bubble { animation: none !important; } /* 움직임 줄이기: 말풍
       <li>한 번 더 누르면 30냥이에요. 족집게로 그 사람을 콕 집어 앉혀 줘요(범인 찾기 때는 둘째 단서에 맞는 사람까지 표시). 대신 별 3개는 못 받아요.</li>
       <li>다시 하면 같은 이야기라도 자리와 단서가 새로 나와요.</li>
     </ol>
+    <button class="setbtn" id="replayTut" type="button">🧭 1화 안내 다시 하기<small style="display:block;font:400 12.5px/1.4 var(--font-body);opacity:.85">연습 판으로 처음 안내를 다시 따라 해요</small></button>
     <h3>데이터</h3>
     <button class="setbtn danger" id="wipe" type="button">진행 초기화<small style="display:block;font:400 12.5px/1.4 var(--font-body);opacity:.85">엽전·별·기록을 모두 지우고 처음부터 (설정은 그대로)</small></button>
     <p class="ver">뚝딱 추리단 · 시험판 v0.2 · 에피소드 <span id="verEps"></span>편</p>
@@ -1806,11 +1820,13 @@ function toggleShelf(s) {
 function showHome() {
   clearInterval(ui.tick); ui.run++; clearCheer();
   $('#play').hidden = true; $('#home').hidden = false; document.body.classList.add('athome'); // 폰: 오른쪽 위가 ⚙ 대신 ☰
+  ui.replayTut = false;
   renderHome(); window.scrollTo({ top: 0 });
 }
 
 // ---------- 플레이 ----------
 function start(id) {
+  if (id !== ORDER[0]) ui.replayTut = false;
   EP = EPISODES.find(e => e.id === id);
   STAGE = STAGES[EP.stage]; BOARD = makeBoard(EP.board);
   posterMode(STAGE.tint || '#b3372a'); // 사건 현장도 포스터처럼 장소색 바탕
@@ -1834,7 +1850,8 @@ function start(id) {
 function setZoom(z) { ui.zoom = z; $('#room').style.setProperty('--zoom', z); }
 // 처음부터 = 새 판: 다른 변형(자리·단서)을 고른다
 // 첫 편을 아직 못 깼으면 안내판: 늘 같은 판(nudge.tutorialVariant), 단서 순서 그대로, 틀려도 송편·별 그대로
-const isTutorial = () => EP.id === ORDER[0] && !rec[EP.id];
+// 안내판에서 '안내 건너뛰기'를 누르면 다음부터 안 뜸(tutSkip), 설정 '1화 안내 다시 하기'로 다시(ui.replayTut — 홈으로 가거나 다른 편을 열면 풀림)
+const isTutorial = () => EP.id === ORDER[0] && (ui.replayTut || (!rec[EP.id] && !store.get('tutSkip', false)));
 // 축하 연출 도중에 떠나면 남은 도장·들썩임을 치운다
 function clearCheer() { $('#app').classList.remove('cheering'); $('#room').querySelector('.cheer')?.remove(); }
 function reset() {
@@ -2019,7 +2036,8 @@ function nudgeView() {
   let tutHead = ui.tut && accusing ? '마지막 · 범인 찾기' : '';
   if (!level && !(ui.tut && (accusing || placed >= tutSteps))) return view;
   const price = hintPrice(hintUsed(), RUN.practice); // 안내판은 무료로 '어떻게 좁혀져요?', 아니면 한 번 더 = 30냥 버튼
-  const box = (head, body, more, buy) => `<div class="nh"><b>${head}</b><button type="button" class="nx" data-nudge-close aria-label="실마리 닫기">✕</button></div>${body}`
+  const skip = ui.tut ? '<button type="button" class="tskip" data-tut-skip>안내 건너뛰기</button>' : ''; // 안내판: 남은 안내를 끄기(연습 판은 그대로)
+  const box = (head, body, more, buy) => `<div class="nh"><b>${head}</b>${skip}<button type="button" class="nx" data-nudge-close aria-label="실마리 닫기">✕</button></div>${body}`
     + (more ? `<div class="acts"><button type="button" data-nudge-more>${price ? `${buy} · ${nyang(price)}` : '어떻게 좁혀져요?'}</button></div>` : '');
   if (accusing) {
     const sets = culpritSeats(variant().culprit, RUN.at, BOARD);
@@ -2295,12 +2313,21 @@ function onSolved() {
   const recall = R.length ? `<div class="recall fade"><div class="rh">📜 그날 이야기 다시 보기</div>${R.map(l => `<div class="rl${l.culprit ? ' cul' : ''}">${pic(who(l.role))}<span>${l.mark ? `${l.mark[0]}<u>${l.mark[1]}</u>${l.mark[2]}` : l.text}${l.culprit ? `<em class="tg">${l.mark ? '🔎 복선' : '범인'}</em>` : ''}${l.after ? `<small>↳ 사실은: ${l.after}</small>` : ''}</span></div>`).join('')}</div>` : '';
   $('#truth').innerHTML = `<p class="lead fade">${F(T.lead)}</p>
     ${T.lines.map(([role, txt]) => `<div class="line fade">${pic(who(role))}<p><b>${NAMES[role]}:</b> "<span class="say" data-say="${F(txt).replace(/"/g, '&quot;')}"></span>"</p></div>`).join('')}
-    <div class="twist fade">${F(T.twist)}</div>${recall}
-    <p class="teaser fade">${EP.teaser}</p>`;
+    <div class="twist fade">${F(T.twist)}</div>${recall}`;
   $('#result').innerHTML = `<div class="fade"><span class="stars big">${starsTxt(r.stars)}</span> <span>⏱ ${mmss(r.sec)}${r.newBest ? ' · <b>최고 기록!</b>' : !r.first ? ` · 최고 ${mmss(r.best)}` : ''}</span></div>
-    <p class="reward fade">${r.first ? `첫 클리어 보상 ${nyang('+' + r.gain)} (기본 ${REWARD} + 남은 송편 ${RUN.hearts}개 × ${HEART_BONUS})` : `다시 깬 이야기라 보상은 ${nyang('+' + r.gain)}`}</p>`;
+    <p class="reward fade">${r.first ? `첫 클리어 보상 ${nyang('+' + r.gain)} (기본 ${REWARD} + 남은 송편 ${RUN.hearts}개 × ${HEART_BONUS})` : `다시 깬 이야기라 보상은 ${nyang('+' + r.gain)}`}</p>`
+    + `<div class="evi fade">${EP.key.img ? `<img src="${img(EP.key.img)}" alt="">` : `<span class="emo">${EP.key.icon}</span>`}<span><b>📒 증거품${r.first ? ' 획득' : ''}</b>${r.first ? '사건 수첩 진열장에 넣었어요' : '사건 수첩 진열장에 있어요'}</span></div>`
+    + nextCard();
   $('#next').hidden = !EPISODES[EPISODES.indexOf(EP) + 1];
   sfx('win'); celebrate();
+}
+// 다음 사건 카드(진실보다 작고 차분하게): 실제 다음 편의 제목·한 줄·장소·난이도·용의자 얼굴. 다음 편이 없으면 한 줄만
+function nextCard() {
+  const nx = EPISODES[EPISODES.indexOf(EP) + 1];
+  if (!nx) return '<p class="nextnone fade">다음 이야기도 곧 찾아와요.</p>';
+  const faces = nx.cast.map(c => `<img src="${img(`face_${c.char}.webp`)}" alt="">`).join('');
+  return `<div class="nextcard fade"><div class="nh"><span>다음 사건 · ${EPISODES.indexOf(nx) + 1}화</span><span>${STAGES[nx.stage].name} · ${LEVEL_NAME[nx.level] || ''}</span></div>`
+    + `<div class="nt">${nx.title}</div><div class="nk">${nx.hook}</div><div class="faces">${faces}<span>용의자 ${nx.cast.length}명</span></div></div>`;
 }
 // 범인 자리 확대: 자리 한가운데로 키우면 가장자리 자리는 판 밖으로 밀려 물건이 잘리므로,
 // 자리(+물건이 튀어 오를 여유)가 보이는 판 안에 통째로 들어오게 배율과 위치를 정한다
@@ -2402,6 +2429,7 @@ document.addEventListener('click', e => {
   else if (t.closest('#back2') && !t.closest('button')) ui.skip = true;
   else if (t.closest('[data-nudge-more]')) doHelp(); // 안내판은 무료 2단계, 아니면 30냥 힌트
   else if (t.closest('[data-nudge-close]')) { ui.nudge = { sig: nudgeSig(), level: -1, used: hintUsed() }; render(); }
+  else if (t.closest('[data-tut-skip]')) { ui.tut = false; store.set('tutSkip', true); ui.nudge = { sig: nudgeSig(), level: -1, used: hintUsed() }; render(); toast('안내를 건너뛰었어요 · 설정에서 다시 볼 수 있어요'); }
 });
 document.addEventListener('keydown', e => {
   if (e.key !== 'Enter' && e.key !== ' ') return;
@@ -2454,6 +2482,7 @@ $('#wipe').addEventListener('click', () => {
 });
 $('#gear').addEventListener('click', openSettings);
 $('#setClose').addEventListener('click', closeSettings);
+$('#replayTut').addEventListener('click', () => { store.set('tutSkip', false); ui.replayTut = true; ui.list = ui.book = ui.dex = false; closeSettings(); start(ORDER[0]); });
 $('#settings').addEventListener('click', e => {
   if (e.target === $('#settings')) { closeSettings(); return; }
   const t = e.target.closest('[data-set]'), g = e.target.closest('[data-seg] button');
