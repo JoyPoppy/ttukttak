@@ -366,7 +366,6 @@ html.notimer .timer { display: none; }
 .field { display: grid; gap: 12px; min-width: 0; }
 .trayhead { display: flex; align-items: baseline; flex-wrap: wrap; gap: 4px 10px; color: var(--cream); }
 .trayhead b { font: 800 17px/1.2 var(--font-title); }
-.trayhead small { font: 600 12.5px/1.4 var(--font-ui); opacity: .8; }
 .poster-mode .tray { margin-top: 0; gap: 8px; }
 .poster-mode .chip { gap: 8px; padding: 5px 14px 5px 5px; border: 2px solid rgb(255 243 220 / .35); background: rgb(0 0 0 / .18); color: var(--cream); font: 600 14px/1 var(--font-ui); }
 .poster-mode .chip .face { width: 34px; height: 34px; border-color: var(--cream); }
@@ -626,7 +625,7 @@ html.calm .bubble { animation: none !important; } /* 움직임 줄이기: 말풍
     <section class="field">
       <div class="stage" id="stage"><div class="room" id="room"><div class="beds" id="beds"></div></div></div>
       <div class="zoombar" id="zoombar"><button type="button" id="zoomOut" aria-label="판 작게">－</button><button type="button" id="zoomIn" aria-label="판 크게">＋</button></div>
-      <div class="trayhead"><b id="trayLeft"></b><small id="trayTip">얼굴 → 자리, 또는 자리 → 얼굴 순으로 눌러 앉혀요 · 틀리면 송편 −1 · 단서를 누르면 그 사람이 반짝여요</small></div>
+      <div class="trayhead"><b id="trayLeft"></b></div>
       <div class="tray" id="tray"></div>
       <div class="nudgebox" id="nudgeBox" hidden aria-live="polite"></div> <!-- 안내·실마리는 얼굴 칸 아래: 판 바로 밑에 두면 얼굴 칸이 화면 밖으로 밀림 -->
       <p class="casenote" id="caseNote"></p>
@@ -1692,7 +1691,6 @@ function reset() {
 function retext() {
   TEXT = { ...renderHeard(EP, variant(), ui.heard, STAGE.place, NAMES), culprit: renderVariant(EP, variant(), STAGE.place, NAMES).culprit };
 }
-const TRAY_TIP = $('#trayTip').textContent;
 function suspectCard() {
   const r = ui.suspect;
   if (!r) return '<p class="suswait">판에서 의심 가는 사람을 눌러 보세요.</p>';
@@ -1719,10 +1717,9 @@ function render() {
   }).join('');
   const left = EP.cast.filter(c => !RUN.at[c.role]).length;
   const hunting = needAccuse(RUN) && !ui.holdHunt; // 범인 찾기: 이제 쓸 일 없는 얼굴 칸 자리에 누른 사람 카드
-  $('#trayLeft').textContent = hunting ? '누가 범인일까요?' : left ? `남은 용의자 ${left}명` : '모두 제자리!';
   const seatName = s => { const [r, c] = BOARD.rc(s); return `${rowNames(STAGE.place.rowName, EP.board.rows)[r]} ${c + 1}번 ${STAGE.place.seatWord}`; };
-  $('#trayTip').textContent = hunting ? '판에서 사람을 누르면 그 사람 이야기가 여기 떠요 · 버튼으로 지목 · 틀리면 송편 −1'
-    : ui.seat ? `${seatName(ui.seat)}에 앉힐 사람을 골라요 · 자리를 다시 누르면 취소` : TRAY_TIP;
+  // 얼굴 칸 제목 한 줄만(안내 문구는 첫 편 안내판·설정 '놀이 방법'에): 빈자리를 먼저 골랐으면 그 자리 이름
+  $('#trayLeft').textContent = hunting ? '누가 범인일까요?' : ui.seat ? `${seatName(ui.seat)}에 앉힐 사람은?` : left ? `남은 용의자 ${left}명` : '모두 제자리!';
   $('#tray').classList.toggle('hunting', hunting);
   $('#tray').classList.toggle('choosing', !!ui.seat && !hunting); // 빈자리를 먼저 골랐으면 남은 얼굴들이 '골라 주세요' 반짝
   $('#tray').innerHTML = hunting ? suspectCard() : trayOrder.map(id => { const p = who(id); return `<button type="button" class="chip ${RUN.at[id] ? 'used' : ''} ${ui.pick === id ? 'picked' : ''}" data-person="${id}" aria-pressed="${ui.pick === id}">${pic(p)}${p.name}</button>`; }).join('');
@@ -1820,7 +1817,8 @@ function nudgeView() {
   st.clues.forEach(i => view.clue.add(i));
   partners.forEach(p => { view.bed[RUN.at[p]] = 'anchor'; });
   let body = placed === 0 && ui.tut
-    ? `<p>판의 위 줄은 '${rowNames(STAGE.place.rowName, EP.board.rows)[0]}', 아래 줄은 '${rowNames(STAGE.place.rowName, EP.board.rows).at(-1)}'이에요. 자리 번호 1이 ${STAGE.place.near} 바로 앞이고, 번호가 클수록 ${STAGE.place.near}에서 멀어요. 이번 판은 연습이라 틀려도 도깨비가 송편을 먹지 않아요.</p>` : '';
+    ? `<p>판의 위 줄은 '${rowNames(STAGE.place.rowName, EP.board.rows)[0]}', 아래 줄은 '${rowNames(STAGE.place.rowName, EP.board.rows).at(-1)}'이에요. 자리 번호 1이 ${STAGE.place.near} 바로 앞이고, 번호가 클수록 ${STAGE.place.near}에서 멀어요. 얼굴을 고른 뒤 자리를 눌러도, 자리를 먼저 누른 뒤 얼굴을 골라도 앉혀져요. 이번 판은 연습이라 틀려도 도깨비가 송편을 먹지 않아요.</p>`
+    : placed === 1 && ui.tut ? '<p>메모의 단서를 누르면 거기 이름이 나온 사람이 판이나 얼굴 칸에서 반짝여요.</p>' : '';
   body += st.kind === 'last' ? `<p>${NAMES[r]}만 남았어요. 남은 빈자리를 찾아봐요.</p>`
     : `<p><b>${fill(`{${r}|의}`, NAMES)} 자리</b>부터 찾아봐요.${partners.length ? ` 이미 앉은 ${nameList(partners)}의 자리를 기준으로 보세요.` : ''}</p>${st.clues.map(i => `<q>${TEXT.clues[i]}</q>`).join('')}`;
   if (level >= 2) {
