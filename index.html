@@ -1801,10 +1801,12 @@ function renderHome() {
       <div class="pact"><button class="ttuk" type="button" data-ttuk="${cur.id}"><img class="club" src="${img('club_idle.webp')}" alt=""><span>뚝딱! 현장으로<small>도깨비 방망이로 ${st.name}까지</small></span></button></div></div>
     <aside class="pside"><span class="plevel">난이도 ${LEVEL_NAME[cur.level] || '보통'}</span><h3>용의자 ${cur.cast.length}명<small>범인은 이 중 한 명.</small></h3><div class="susgrid">${sus}</div></aside>${specialCard(done.length)}</article>`;
 }
-// 🎯 특별 사건 카드: 본편을 special.unlock 편 깨면 열림, 안 한 것 중 첫 편 하나만(안 해도 본편은 그대로)
+// 🎯 특별 사건 카드: 본편을 special.unlock 편 깨면 열림. 안 한 것 중 첫 편, 다 했으면 마지막으로 열린 편을 '다시 하기'로(안 해도 본편은 그대로)
 function specialCard(solved) {
-  const sp = SPECIALS.find(s => solved >= s.special.unlock && !rec[s.id]);
-  return sp ? `<button type="button" class="spcard" data-play="${sp.id}"><span class="ic" aria-hidden="true">🎯</span><span><b>특별 사건 · 범인을 먼저 찾아라</b><small>${STAGES[sp.stage].name} · 「${sp.title}」 — 다 앉히기 전에 범인을 맞혀요</small></span><span class="go">해 보기</span></button>` : '';
+  const open = SPECIALS.filter(s => solved >= s.special.unlock), sp = open.find(s => !rec[s.id]) || open.at(-1);
+  if (!sp) return '';
+  const again = !!rec[sp.id];
+  return `<button type="button" class="spcard" data-play="${sp.id}"><span class="ic" aria-hidden="true">🎯</span><span><b>특별 사건 · 범인을 먼저 찾아라</b><small>${STAGES[sp.stage].name} · 「${sp.title}」 — ${again ? '푼 사건이에요. 더 일찍 지목해 볼까요?' : '다 앉히기 전에 범인을 맞혀요'}</small></span><span class="go">${again ? '다시 하기' : '해 보기'}</span></button>`;
 }
 // 뚝딱: 방망이를 휘두르고 펑 → 현장(판)으로. 움직임 줄이기면 바로 시작
 function ttuk(btn) {
