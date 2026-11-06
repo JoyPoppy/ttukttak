@@ -1959,7 +1959,7 @@ function start(id) {
   $('#spBand').hidden = !EP.special;
   $('#epTitle').textContent = EP.title;
   const s = posterStory(fill(EP.story, NAMES)); // 포스터에서 읽은 사건을 판 밑에도 — 진실 화면에서도 무슨 일이었는지 보이게
-  ui.caseIntro = `${s.lead ? `${s.lead} ` : ''}<strong>${s.hook}</strong>`; // 판 밑 사건 칸: 사건 소개 + 맞힐 때마다 쌓이는 그날 이야기 (drawCase)
+  ui.caseIntro = `${s.lead ? `${s.lead} ` : ''}<strong>${s.hook}</strong>`; // 판 밑 사건 칸: 사건 소개만 (drawCase)
   $('#home').hidden = true; $('#play').hidden = false; document.body.classList.remove('athome');
   reset();
 }
@@ -2061,7 +2061,7 @@ function render() {
   $('#suspect').classList.toggle('fresh', reveal);
   $('#suspect').innerHTML = `<div class="sh">🔎 ${phrase}${josa(phrase, '은/는')} 누구?</div>`
     + (done ? TEXT.culprit.map((t, i) => { const story = variant().culprit[i]?.kind === 'story'; // 📜 그날 이야기 단서: 사건의 이야기 줄로 좁힘(폰은 메모장 사건 장으로 넘기는 버튼)
-      return `<div class="clue sus${story ? ' story' : ''}${nv.sus.has(i) ? ' look' : ''}" data-sus="${i}" role="button" tabindex="0" style="--k:${i}"><span class="st">${story ? '📜' : '?'}</span><div><span>${story ? '<b class="stg">그날 이야기</b> ' : ''}${T(t)}</span>${story ? '<button type="button" class="tocase" data-nb="case">📜 사건 장 보기</button>' : ''}</div></div>`; }).join('')
+      return `<div class="clue sus${story ? ' story' : ''}${nv.sus.has(i) ? ' look' : ''}" data-sus="${i}" role="button" tabindex="0" style="--k:${i}"><span class="st">${story ? '📜' : '?'}</span><div><span>${story ? '<b class="stg">그날 이야기</b> ' : ''}${T(t)}</span></div></div>`; }).join('')
       : `<div class="sealed">🔒 범인 단서 ${TEXT.culprit.length}개</div>`)
     + (canEarly ? `<button type="button" class="acc-now" data-early>🔎 지금 범인 지목하기<small>다 앉히지 않아도, 범인이 확실하면</small></button>${ui.notyet ? '<div class="notyet">🤔 아직 여러 명이 범인일 수 있어요. 자리를 조금 더 알아내 보세요.</div>' : ''}` : '')
     + (accusing ? `<div class="accuse-cta" style="--k:${TEXT.culprit.length}">${early ? '얼굴 칸에서 범인을 골라 지목하세요' : '판에서 그 사람을 눌러 지목하세요'}</div>` : '');
@@ -2080,7 +2080,7 @@ function render() {
   $('#nudge').setAttribute('aria-label', price ? `힌트 ${price}냥: ${realAcc ? '둘째 범인 단서에 맞는 사람도 판에 표시해요' : '실마리가 가리킨 사람을 콕 집어 앉혀 줘요'}` : '힌트 무료: 누구를 어느 단서로 찾을지 알려 줘요');
   $('#nudgeBox').hidden = !nv.html || solved;
   if (nv.html) $('#nudgeBox').innerHTML = nv.html;
-  if (solved && !ui.shown) { ui.shown = true; drawCase(); onSolved(); } // 진실 화면에서는 폰도 그날 이야기를 다 펼침
+  if (solved && !ui.shown) { ui.shown = true; onSolved(); } // 그날 이야기는 진실 화면 '다시 보기'에 다 펼침
 }
 
 // ---------- 장소 말 뜻 쪽지 · 🧭 장소 안내 ----------
@@ -2163,7 +2163,7 @@ function nudgeView() {
   if (accusing) {
     const sets = culpritSeats(variant().culprit, RUN.at, BOARD);
     const story = variant().culprit.some(c => c.kind === 'story');
-    if (!level) { view.html = box(tutHead, `<p><b>범인 단서 2개</b>에 다 맞는 사람을 판에서 눌러요.${story ? ' 📜는 사건의 그날 이야기에서.' : ''}</p>`); return view; } // 설명은 짧게(읽는 재미는 사건 글에)
+    if (!level) { view.html = box(tutHead, `<p><b>범인 단서 2개</b>에 다 맞는 사람을 판에서 눌러요.${story ? ' 📜는 사람을 누르면 나오는 이야기로.' : ''}</p>`); return view; } // 설명은 짧게(읽는 재미는 사건 글에)
     sets[0].forEach(s => { view.bed[s] = 'maybe'; });
     view.sus.add(0);
     let body = `<p>첫 단서에 맞는 사람 ${sets[0].length}명(표시).</p><q>${T(TEXT.culprit[0])}</q>`;
@@ -2312,7 +2312,7 @@ function eatCake(i) {
   later(1220, () => { dk.classList.remove('chewing'); dk.classList.add('down'); }); // ate 는 남겨서 입 다문 채 내려감
   setTimeout(() => { dk.remove(); fly.remove(); }, 1480);
 }
-// 맞힌 사람의 '그날 이야기' + 새 단서: 판 위 말풍선(다음 행동까지 남음), 이야기는 사건 칸에 앉힌 순서대로, 단서는 메모에 쌓임.
+// 맞힌 사람의 '그날 이야기' + 새 단서: 판 위 말풍선(다음 행동까지 남음), 단서는 메모에 쌓임.
 // render() 전에 불러야 마지막 사람의 '범인을 찾아라'가 뒤로 밀림. 마지막 사람은 단서를 말하지 않음(다 앉음)
 // 맞게 앉힌 사람: 새 단서는 말풍선 없이 메모에 바로(그 사람 얼굴 + '새로'), 말풍선엔 그날 이야기 한 줄만 → 새 단서 수를 돌려줌
 function tell(role, seat) {
@@ -2320,7 +2320,7 @@ function tell(role, seat) {
   const said = ui.plan ? talkFor(variant(), BOARD, EP.cast.map(c => c.role), ui.plan.order, ui.heard, RUN.at) : [];
   if (said.length) { ui.heard.push(...said); ui.said[role] = said; ui.fresh = said.at(-1); retext(); if (ui.nb === 'case') ui.nbNew = true; }
   if (!EP.cast.find(c => c.role === role)?.scene) return said.length; // 이야기 줄이 없는 편(51화~)은 말풍선 없음
-  ui.told.push(role); drawCase();
+  ui.told.push(role);
   ui.holdHunt = needAccuse(RUN); // 마지막 사람: 말풍선의 '범인 찾기' 버튼(또는 판·말풍선 누르기)으로 닫을 때까지 범인 찾기를 미룸
   sayScene(role, seat);
   return said.length;
@@ -2347,12 +2347,11 @@ function closeTale() {
   document.querySelector('.bed.talking')?.classList.remove('talking');
   ui.talk = null;
 }
-// 사건 소개 + 맞힐 때마다 쌓이는 그날 이야기: PC 는 판 밑 사건 칸, 폰은 메모장 첫 장(📜 사건 장) — 둘 다 그려 두고 CSS 가 하나만 보임
+// 사건 소개: PC 는 판 밑 사건 칸, 폰은 메모장 첫 장(📜 사건 장) — 둘 다 그려 두고 CSS 가 하나만 보임.
+// 그날 이야기 줄은 쌓아 적지 않음(사용자) — 맞게 앉힐 때 말풍선, 앉은 사람을 누르면 다시(범인 찾기 땐 카드), 진실 화면 '다시 보기'
 function drawCase() {
-  const has = EP.cast.some(c => c.scene), lines = sceneLines(EP.cast, ui.told, NAMES);
-  const list = `<ol class="scenes">${lines.map(l => `<li>${pic(who(l.role))}<span>${l.text}</span></li>`).join('')}</ol>`;
-  $('#caseNote').innerHTML = `<span class="tag">📜 사건</span> ${ui.caseIntro}` + (has && lines.length ? list : ''); // 빈 사건 칸 안내 문장은 뺌(첫 줄이 생기면 알게 됨)
-  $('#casePage').innerHTML = `<h3>📜 사건</h3><p class="lead">${ui.caseIntro}</p>` + (has && lines.length ? list : '');
+  $('#caseNote').innerHTML = `<span class="tag">📜 사건</span> ${ui.caseIntro}`;
+  $('#casePage').innerHTML = `<h3>📜 사건</h3><p class="lead">${ui.caseIntro}</p>`;
 }
 // 틀렸을 때 그 인물의 한마디 (2.2초)
 function quip(el, p, lines) {
@@ -2528,7 +2527,7 @@ document.addEventListener('click', e => {
   else if (t.closest('[data-term-close]')) closeTerm();
   else if (t.closest('[data-guide]')) { ui.guide = !ui.guide; render(); }
   else if (t.closest('[data-zone]')) { const [k, r] = t.closest('[data-zone]').dataset.zone.split(':'); flashZone(k === 'row' ? { kind: 'row', r: +r } : { kind: 'near' }); }
-  else if (t.closest('[data-nb]')) { // 폰 메모장 장 넘기기(범인 단서의 '사건 장 보기' 포함)
+  else if (t.closest('[data-nb]')) { // 폰 메모장 장 넘기기
     ui.nb = t.closest('[data-nb]').dataset.nb; if (ui.nb === 'memo') ui.nbNew = false; render();
     $('#nbTabs').scrollIntoView({ behavior: isCalm() ? 'auto' : 'smooth', block: 'nearest' });
   }
