@@ -720,7 +720,7 @@ html.calm .bubble { animation: none !important; } /* 움직임 줄이기: 말풍
     <span class="ep" id="epNo"></span><h1 id="epTitle"></h1><span class="sp"></span>
     <div class="hud"><span class="hearts" id="hearts" aria-label="남은 송편"></span><span class="coins" id="coins" aria-label="엽전"></span><span class="timer" id="timer" aria-label="걸린 시간">0:00</span><button class="btn hint" id="nudge" type="button" aria-label="힌트 무료: 누구를 어느 단서로 찾을지 알려 줘요">💡 힌트 <small>무료</small></button></div>
   </header>
-  <div class="spband" id="spBand" hidden><b>🎯 특별 사건</b><span>범인을 먼저 찾아라 — 다 앉히지 않아도 범인이 확실해지면 지목할 수 있어요</span></div>
+  <div class="spband" id="spBand" hidden><b>🎯 특별 사건</b><span>다 앉히기 전에 범인을 맞혀요</span></div>
   <div class="layout">
     <section class="field">
       <div class="stage" id="stage"><div class="room" id="room"><div class="beds" id="beds"></div></div></div>
@@ -2011,6 +2011,7 @@ function render() {
   $('#beds').innerHTML = BOARD.seats.map(s => {
     const role = seatOf(s), p = role && who(role), [r, c] = BOARD.rc(s);
     const z = ui.zone && (ui.zone.kind === 'row' ? r === ui.zone.r : c === 0); // 장소 말·장소 안내: 그 줄 전체 또는 1번 쪽 끝
+    const tags = ui.guide || (ui.tut && !Object.keys(RUN.at).length); // 1화 첫 걸음엔 판 읽는 법을 글 대신 줄 이름표로
     const cls = ['bed', r === last ? 'last' : '', p ? 'lock' : 'empty', ui.pick && !p ? 'target' : '', ui.seat === s ? 'picked' : '', ui.flash === s ? 'justok' : '', nv.bed[s] || '',
       ui.talk === s ? 'talking' : '', role && role === ui.suspect ? 'chosen' : '', z ? 'zone' : ''].join(' ');
     const label = `${rowNames(STAGE.place.rowName, EP.board.rows)[r]} ${c + 1}번 ${STAGE.place.seatWord}${p ? `, ${p.name}` : ', 비어 있음'}`;
@@ -2018,11 +2019,11 @@ function render() {
       ${p ? `<span class="who">${pic(p)}<span class="nm">${p.name}</span></span>` : ui.seat === s ? '<span class="ask" aria-hidden="true">?</span>' : ''}
       ${role && ui.told.includes(role) && !over ? '<span class="talk" aria-hidden="true">💬</span>' : ''}
       ${s === keySeat ? `<span class="apple" aria-hidden="true">${EP.key.img ? `<img src="${img(EP.key.img)}" alt="">` : EP.key.icon}</span>` : ''}
-      ${ui.guide && c === 0 && EP.board.rows > 1 ? `<span class="rowtag" aria-hidden="true">${rowNames(STAGE.place.rowName, EP.board.rows)[r]}</span>` : ''}
+      ${tags && c === 0 && EP.board.rows > 1 ? `<span class="rowtag" aria-hidden="true">${rowNames(STAGE.place.rowName, EP.board.rows)[r]}</span>` : ''}
       <span class="no">${c + 1}</span></div>`;
   }).join('');
   $('#room').querySelector('.neartag')?.remove();
-  if (ui.guide) $('#room').insertAdjacentHTML('beforeend', `<span class="neartag" aria-hidden="true">⬅ ${STAGE.place.near} 쪽 · 1번이 ${STAGE.place.near} 바로 앞</span>`);
+  if (ui.guide || (ui.tut && !Object.keys(RUN.at).length)) $('#room').insertAdjacentHTML('beforeend', `<span class="neartag" aria-hidden="true">⬅ ${STAGE.place.near} 쪽 · 1번이 ${STAGE.place.near} 바로 앞</span>`);
   $('#placeBtn').classList.toggle('on', ui.guide); $('#placeBtn').setAttribute('aria-expanded', ui.guide);
   $('#guide').hidden = !ui.guide;
   if (ui.guide) $('#guide').innerHTML = guideHtml();
@@ -2044,7 +2045,7 @@ function render() {
   $('#clues').innerHTML = [...todo, ...rows.filter(r => r.pass)].map(({ i, ready, pass }) => {
     const by = saidBy[i], src = by ? `<img class="face src" src="${img(`face_${who(by).face}.webp`)}" alt="${NAMES[by]}${josa(NAMES[by], '이/가')} 말해 줌">` : '';
     return `<div class="clue ${ready ? (pass ? 'ok' : 'no') : ''}${nv.clue.has(i) ? ' look' : ''}${i === ui.fresh ? ' fresh' : ''}" data-clue="${i}" role="button" tabindex="0"><span class="st">${ready ? (pass ? '✓' : '✕') : ui.heard.indexOf(i) + 1}</span><div><span>${src}${T(TEXT.clues[i])}${i === ui.fresh ? '<span class="new">새로</span>' : ''}</span></div></div>`;
-  }).join('') + (later ? `<div class="clue later"><span class="st">🔒</span><div><span>아직 못 들은 단서 ${later}개 · 맞게 앉히면 하나씩 메모에 적혀요</span></div></div>` : '');
+  }).join('') + (later ? `<div class="clue later"><span class="st">🔒</span><div><span>단서 ${later}개 더</span></div></div>` : '');
   $('#hearts').innerHTML = CAKES.map((f, i) => `<span class="cake${i >= RUN.hearts ? ' gone' : ''}"><img src="${img(f)}" alt=""></span>`).join(''); // 먹힌 자리는 흐린 송편 + 빈 접시
   $('#hearts').setAttribute('aria-label', `남은 송편 ${RUN.hearts}개`);
   $('#coins').innerHTML = nyang(wallet.coins);
@@ -2061,7 +2062,7 @@ function render() {
   $('#suspect').innerHTML = `<div class="sh">🔎 ${phrase}${josa(phrase, '은/는')} 누구?</div>`
     + (done ? TEXT.culprit.map((t, i) => { const story = variant().culprit[i]?.kind === 'story'; // 📜 그날 이야기 단서: 사건의 이야기 줄로 좁힘(폰은 메모장 사건 장으로 넘기는 버튼)
       return `<div class="clue sus${story ? ' story' : ''}${nv.sus.has(i) ? ' look' : ''}" data-sus="${i}" role="button" tabindex="0" style="--k:${i}"><span class="st">${story ? '📜' : '?'}</span><div><span>${story ? '<b class="stg">그날 이야기</b> ' : ''}${T(t)}</span>${story ? '<button type="button" class="tocase" data-nb="case">📜 사건 장 보기</button>' : ''}</div></div>`; }).join('')
-      : `<div class="sealed">🔒 자리를 모두 맞히면 범인 단서 ${TEXT.culprit.length}개가 열려요</div>`)
+      : `<div class="sealed">🔒 범인 단서 ${TEXT.culprit.length}개</div>`)
     + (canEarly ? `<button type="button" class="acc-now" data-early>🔎 지금 범인 지목하기<small>다 앉히지 않아도, 범인이 확실하면</small></button>${ui.notyet ? '<div class="notyet">🤔 아직 여러 명이 범인일 수 있어요. 자리를 조금 더 알아내 보세요.</div>' : ''}` : '')
     + (accusing ? `<div class="accuse-cta" style="--k:${TEXT.culprit.length}">${early ? '얼굴 칸에서 범인을 골라 지목하세요' : '판에서 그 사람을 눌러 지목하세요'}</div>` : '');
   if (reveal) { ui.nb = 'memo'; huntBanner(); } // 폰 메모장: 범인 단서가 열리면 단서 장으로
@@ -2162,19 +2163,19 @@ function nudgeView() {
   if (accusing) {
     const sets = culpritSeats(variant().culprit, RUN.at, BOARD);
     const story = variant().culprit.some(c => c.kind === 'story');
-    if (!level) { view.html = box(tutHead, `<p>범인 단서 두 개가 열렸어요(단서 메모 아래). 두 단서에 모두 맞는 사람을 판에서 눌러 지목해요.${story ? ' 📜 그날 이야기 단서는 사건의 그날 이야기를 다시 읽어 보면 누구 얘기인지 알 수 있어요.' : ''} 막히면 💡 힌트를 눌러 보세요.</p>`); return view; }
+    if (!level) { view.html = box(tutHead, `<p><b>범인 단서 2개</b>에 다 맞는 사람을 판에서 눌러요.${story ? ' 📜는 사건의 그날 이야기에서.' : ''}</p>`); return view; } // 설명은 짧게(읽는 재미는 사건 글에)
     sets[0].forEach(s => { view.bed[s] = 'maybe'; });
     view.sus.add(0);
-    let body = `<p>첫째 범인 단서에 맞는 사람은 판에 표시한 ${sets[0].length}명이에요.</p><q>${T(TEXT.culprit[0])}</q>`;
+    let body = `<p>첫 단서에 맞는 사람 ${sets[0].length}명(표시).</p><q>${T(TEXT.culprit[0])}</q>`;
     if (level >= 2) {
       sets.slice(1).flat().forEach(s => { view.bed[s] = `${view.bed[s] || ''} maybe2`.trim(); });
       sets.slice(1).forEach((_, k) => view.sus.add(k + 1));
-      body += `<p>${story ? '그날 이야기 단서' : '둘째 단서'}에 맞는 사람은 파란 테두리로 표시했어요. 두 표시가 겹치는 사람이 범인이에요.</p>${TEXT.culprit.slice(1).map(t => `<q>${T(t)}</q>`).join('')}`;
-    } else body += '<p>이 중에서 둘째 단서에도 맞는 사람을 찾아보세요.</p>';
+      body += `<p>${story ? '이야기 단서' : '둘째 단서'}는 파란 테두리 — 겹치는 사람이 범인!</p>${TEXT.culprit.slice(1).map(t => `<q>${T(t)}</q>`).join('')}`;
+    } else body += '<p>둘째 단서도 맞는 사람은?</p>';
     view.html = box(tutHead || '💡 생각의 실마리', body, level < 2, `${story ? '이야기' : '둘째'} 단서도 표시`);
     return view;
   }
-  if (!level) { view.html = box(tutHead || '💡 생각의 실마리', '<p>이제 혼자 해 볼까요? 막히면 💡 힌트를 눌러 보세요.</p>'); return view; }
+  if (!level) { view.html = box(tutHead || '💡 생각의 실마리', '<p>이제 혼자! 막히면 💡</p>'); return view; }
   const clues = variant().clues, st = stepNow();
   if (!st) { view.html = box('💡 생각의 실마리', '<p>지금은 실마리를 찾지 못했어요. 단서를 하나씩 다시 읽어 보거나, 힌트를 한 번 더 눌러 족집게로 한 명을 앉혀 보세요.</p>', !!price, '족집게로 한 명 앉히기'); return view; }
   if (ui.tut && placed < tutSteps) tutHead = `안내 ${placed + 1}/${tutSteps} · ${tutTitle(placed, st.kind)}`;
@@ -2182,25 +2183,21 @@ function nudgeView() {
   const partners = [...new Set(st.clues.flatMap(i => named(clues[i])).filter(x => x !== r))];
   st.clues.forEach(i => view.clue.add(i));
   partners.forEach(p => { view.bed[RUN.at[p]] = 'anchor'; });
-  let body = placed === 0 && ui.tut
-    ? `<p>판의 위 줄은 '${rowNames(STAGE.place.rowName, EP.board.rows)[0]}', 아래 줄은 '${rowNames(STAGE.place.rowName, EP.board.rows).at(-1)}'이에요. 자리 번호 1이 ${STAGE.place.near} 바로 앞이고, 번호가 클수록 ${STAGE.place.near}에서 멀어요. 모르는 말은 밑줄을, 줄 이름은 🧭 장소를 눌러 보세요. 얼굴을 고른 뒤 자리를 눌러도, 자리를 먼저 누른 뒤 얼굴을 골라도 앉혀져요. 이번 판은 연습이라 틀려도 도깨비가 송편을 먹지 않아요.</p>`
-    : placed === 1 && ui.tut ? '<p>메모의 단서를 누르면 거기 이름이 나온 사람이 판이나 얼굴 칸에서 반짝여요.</p>' : '';
-  body += st.kind === 'last' ? `<p>${NAMES[r]}만 남았어요. 남은 빈자리를 찾아봐요.</p>`
-    : `<p><b>${fill(`{${r}|의}`, NAMES)} 자리</b>부터 찾아봐요.${partners.length ? ` 이미 앉은 ${nameList(partners)}의 자리를 기준으로 보세요.` : ''}</p>${st.clues.map(i => `<q>${T(TEXT.clues[i])}</q>`).join('')}`;
+  // 설명은 한 줄로 — 판 읽는 법은 1화 첫 걸음에 판 위 줄 이름표로(render), 나머지는 해 보면서(설정 '게임 방법'에 다 있음)
+  let body = st.kind === 'last' ? `<p><b>${NAMES[r]}</b>만 남았어요 — 빈자리로!</p>`
+    : `<p><b>${placed === 0 ? `${NAMES[r]}부터!` : `다음은 ${NAMES[r]}.`}</b>${partners.length ? ` ${nameList(partners)} 자리를 기준으로.` : ''}</p>${st.clues.map(i => `<q>${T(TEXT.clues[i])}</q>`).join('')}`;
   if (level >= 2) {
     if (st.kind !== 'last') st.match.forEach(s => { view.bed[s] = seatOf(s) ? 'nope' : 'maybe'; });
     view.bed[st.free] = 'maybe';
     const why = {
-      direct: '이 단서가 자리를 바로 알려 줘요. 판에 반짝이는 자리예요.',
-      relation: `${nameList(partners)}의 자리에서 보면, 단서에 맞는 자리는 반짝이는 한 곳뿐이에요.`,
-      elim: `단서에 맞는 자리는 ${st.match.length}곳인데, ✕ 표시한 ${taken.length}곳은 이미 찼어요. 남은 한 곳이 답이에요.`,
-      combo: `단서 ${st.clues.length}개에 모두 맞는 빈자리는 반짝이는 한 곳뿐이에요.${taken.length ? ' ✕는 이미 찬 자리예요.' : ''}`,
-      last: '빈자리가 한 곳만 남았어요. 반짝이는 자리예요.',
+      direct: '반짝이는 자리예요.',
+      relation: `${nameList(partners)} 자리에서 보면 반짝이는 한 곳.`,
+      elim: `맞는 자리 ${st.match.length}곳 — ✕는 찼어요. 남은 한 곳!`,
+      combo: '단서를 겹치면 반짝이는 한 곳.',
+      last: '반짝이는 빈자리예요.',
     }[st.kind];
-    body += `<p>${why} ${fill(`{${r}|를}`, NAMES)} 골라 그 자리에 앉혀 보세요.</p>`;
-  } else if (ui.tut && st.kind === 'elim') body += `<p>단서에 맞는 자리가 ${st.match.length}곳이에요. 그중 벌써 누가 앉은 자리를 빼 보세요.</p>`;
-  else if (ui.tut) body += `<p>단서를 읽고 ${fill(`{${r}|를}`, NAMES)} 직접 앉혀 보세요.</p>`;
-  if (ui.tut && placed === 0 && ui.plan) body += '<p>단서는 처음엔 몇 개뿐이에요. 맞게 앉히면 새 단서가 하나씩 메모에 적혀요(메모 맨 아래 🔒 줄).</p>';
+    body += `<p>${why}</p>`;
+  } else if (ui.tut && st.kind === 'elim') body += `<p>맞는 자리 ${st.match.length}곳 — 빈 곳은?</p>`;
   if (EP.special && culpritPlain(variant(), BOARD, EP.cast.map(c => c.role), ui.heard, RUN.at, EP.key.role)) body = `<p class="spknown">🎯 범인이 벌써 확실해요! '🔎 지금 범인 지목하기'를 눌러 보세요.</p>${body}`;
   view.html = box(tutHead || '💡 생각의 실마리', body, level < 2, `족집게로 ${fill(`{${r}|를}`, NAMES)} 앉히기`);
   return view;
@@ -2353,10 +2350,9 @@ function closeTale() {
 // 사건 소개 + 맞힐 때마다 쌓이는 그날 이야기: PC 는 판 밑 사건 칸, 폰은 메모장 첫 장(📜 사건 장) — 둘 다 그려 두고 CSS 가 하나만 보임
 function drawCase() {
   const has = EP.cast.some(c => c.scene), lines = sceneLines(EP.cast, ui.told, NAMES);
-  const wait = '맞게 앉힐 때마다 그날 그 사람이 뭘 하고 있었는지 여기 한 줄씩 적혀요. 앉은 사람을 누르면 다시 볼 수 있어요.';
   const list = `<ol class="scenes">${lines.map(l => `<li>${pic(who(l.role))}<span>${l.text}</span></li>`).join('')}</ol>`;
-  $('#caseNote').innerHTML = `<span class="tag">📜 사건</span> ${ui.caseIntro}` + (!has ? '' : !lines.length ? `<small class="scenehint">${wait}</small>` : list);
-  $('#casePage').innerHTML = `<h3>📜 사건</h3><p class="lead">${ui.caseIntro}</p>` + (!has ? '' : !lines.length ? `<p class="wait">${wait}</p>` : list);
+  $('#caseNote').innerHTML = `<span class="tag">📜 사건</span> ${ui.caseIntro}` + (has && lines.length ? list : ''); // 빈 사건 칸 안내 문장은 뺌(첫 줄이 생기면 알게 됨)
+  $('#casePage').innerHTML = `<h3>📜 사건</h3><p class="lead">${ui.caseIntro}</p>` + (has && lines.length ? list : '');
 }
 // 틀렸을 때 그 인물의 한마디 (2.2초)
 function quip(el, p, lines) {
