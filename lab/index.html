@@ -2564,7 +2564,7 @@ function onSolved() {
   const T = EP.truth, F = t => fill(t, NAMES);
   // 그날 이야기 다시 보기: 범인(복선에 밑줄) → 미끼(↳ 사실은) → 나머지, 한 덩어리로 펼침
   const R = recallLines(EP.cast, EP.key.role, NAMES);
-  const recall = R.length ? `<div class="recall fade"><div class="rh">📜 그날 이야기 다시 보기</div>${R.map(l => `<div class="rl${l.culprit ? ' cul' : ''}">${pic(who(l.role))}<span>${l.mark ? `${l.mark[0]}<u>${l.mark[1]}</u>${l.mark[2]}` : l.text}${l.culprit ? `<em class="tg">${l.mark ? '🔎 복선' : '범인'}</em>` : ''}${l.after ? `<small>↳ 사실은: ${l.after}</small>` : ''}</span></div>`).join('')}</div>` : '';
+  const recall = R.length ? `<div class="recall fade"><div class="rh">📜 그날 이야기 다시 보기</div>${R.map(l => `<div class="rl${l.culprit ? ' cul' : ''}">${pic(who(l.role))}<span>${l.mark ? `${l.mark[0]}<u>${l.mark[1]}</u>${l.mark[2]}` : l.text}${l.culprit && !l.mark ? '<em class="tg">범인</em>' : ''}${l.after ? `<small>↳ 사실은: ${l.after}</small>` : ''}</span></div>`).join('')}</div>` : '';
   $('#truth').innerHTML = `<p class="lead fade">${F(T.lead)}</p>
     ${T.lines.map(([role, txt]) => `<div class="line fade">${pic(who(role))}<p><b>${NAMES[role]}:</b> "<span class="say" data-say="${F(txt).replace(/"/g, '&quot;')}"></span>"</p></div>`).join('')}
     <div class="twist fade">${F(T.twist)}</div>${recall}`;
