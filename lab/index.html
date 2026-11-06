@@ -2281,7 +2281,7 @@ function nudgeView() {
   let tutHead = ui.tut && accusing ? '마지막 · 범인 찾기' : '';
   if (!level && !(ui.tut && (accusing || placed >= tutSteps))) return view;
   const price = hintPrice(hintUsed(), RUN.practice); // 안내판은 무료로 '어떻게 좁혀져요?', 아니면 한 번 더 = 30냥 버튼
-  const skip = ui.tut ? '<button type="button" class="tskip" data-tut-skip>안내 건너뛰기</button>' : ''; // 안내판: 남은 안내를 끄기(연습 판은 그대로)
+  const skip = ui.tut ? '<button type="button" class="tskip" data-tut-skip aria-label="안내 건너뛰기">건너뛰기</button>' : ''; // 안내판: 남은 안내를 끄기(연습 판은 그대로)
   const box = (head, body, more, buy) => `<div class="nh"><b>${head}</b>${skip}<button type="button" class="nx" data-nudge-close aria-label="실마리 닫기">✕</button></div>${body}`
     + (more ? `<div class="acts"><button type="button" data-nudge-more>${price ? `${buy} · ${nyang(price)}` : '어떻게 좁혀져요?'}</button></div>` : '');
   if (accusing) {
