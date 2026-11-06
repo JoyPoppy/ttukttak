@@ -2583,9 +2583,10 @@ function countUp(from, to) {
   const step = now => {
     const k = Math.min(1, (now - t0) / dur);
     num.textContent = `${Math.round(from + (to - from) * k)}냥`;
-    if (k < 1) requestAnimationFrame(step); else setTimeout(() => el.classList.remove('bump'), 500);
+    if (k < 1) requestAnimationFrame(step);
   };
   requestAnimationFrame(step);
+  setTimeout(() => { num.textContent = `${to}냥`; el.classList.remove('bump'); }, dur + 300); // 화면이 뒤에 있어 그리기가 멈춰도 끝 숫자는 맞게
 }
 // 다음 사건 카드(진실보다 작고 차분하게): 실제 다음 편의 제목·한 줄·장소·난이도(용의자는 안 보임 — 사용자). 다음 편이 없으면 한 줄만
 function nextCard() {
