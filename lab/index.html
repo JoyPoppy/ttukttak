@@ -726,6 +726,11 @@ html.calm .clue.fresh.pop .st { animation: none; }
 .back .rl.cul { border: 2px solid #b23a2a; background: #fff3ea; }
 .back .rl u { text-decoration: none; background: linear-gradient(transparent 55%, #ffd27a 55%); }
 .back .rl .tg { display: inline-block; margin-left: 4px; padding: 0 6px; border-radius: 99px; background: #b23a2a; color: #fff; font: 600 11px/1.6 var(--font-ui); font-style: normal; }
+.back .rl .sil { margin-right: 3px; font: 800 12.5px/1 var(--font-ui); color: #5b6b3a; } /* 미끼 줄: 원래 문장 대신 '사실은' 한 줄만 */
+.back .rmore summary { list-style: none; cursor: pointer; justify-self: start; display: inline-block; padding: 5px 12px; border-radius: 99px; border: 1.5px solid #c9b48a; color: #6b4c1a; font: 700 12.5px/1 var(--font-ui); } /* 나머지 줄은 접어 둠 */
+.back .rmore summary::-webkit-details-marker { display: none; }
+.back .rmore[open] summary { opacity: .65; }
+.back .rmore .rgrid { display: grid; gap: 6px; margin-top: 6px; }
 .back .rl small { display: block; margin-top: 3px; font: 600 12.5px/1.4 var(--font-ui); color: #5b6b3a; }
 /* 진열장 카드: 깬 편의 그날 이야기 (모두 같은 모양) */
 .shelfcard .cardscenes { width: 100%; text-align: left; display: grid; gap: 4px; margin-top: 4px; }
@@ -2573,9 +2578,12 @@ function onSolved() {
   saveAll();
   countUp(before, wallet.coins);
   const T = EP.truth, F = t => fill(t, NAMES);
-  // 그날 이야기 다시 보기: 범인(복선에 밑줄) → 미끼(↳ 사실은) → 나머지, 한 덩어리로 펼침
+  // 그날 이야기 다시 보기 — 시험판: 범인 줄(복선 밑줄) + 미끼는 '사실은' 한 줄만 펼치고, 나머지(방금 말풍선으로 본 줄)는 '다른 사람 N명'으로 접어 둠(테스터: 재방송 줄이 좋은 줄을 덮고 반전 여운을 깎음)
   const R = recallLines(EP.cast, EP.key.role, NAMES);
-  const recall = R.length ? `<div class="recall fade"><div class="rh">📜 그날 이야기 다시 보기</div>${R.map(l => `<div class="rl${l.culprit ? ' cul' : ''}">${pic(who(l.role))}<span>${l.mark ? `${l.mark[0]}<u>${l.mark[1]}</u>${l.mark[2]}` : l.text}${l.culprit && !l.mark ? '<em class="tg">범인</em>' : ''}${l.after ? `<small>↳ 사실은: ${l.after}</small>` : ''}</span></div>`).join('')}</div>` : '';
+  const rl = l => `<div class="rl${l.culprit ? ' cul' : ''}">${pic(who(l.role))}<span>${l.culprit ? (l.mark ? `${l.mark[0]}<u>${l.mark[1]}</u>${l.mark[2]}` : `${l.text}<em class="tg">범인</em>`) : l.after ? `<b class="sil">사실은</b> ${l.after}` : l.text}</span></div>`;
+  const top = R.filter(l => l.culprit || l.after), rest = R.filter(l => !l.culprit && !l.after);
+  const recall = R.length ? `<div class="recall fade"><div class="rh">📜 그날 이야기 다시 보기</div>${top.map(rl).join('')}`
+    + (rest.length ? `<details class="rmore"><summary>다른 사람 ${rest.length}명</summary><div class="rgrid">${rest.map(rl).join('')}</div></details>` : '') + '</div>' : '';
   $('#truth').innerHTML = `<p class="lead fade">${F(T.lead)}</p>
     ${T.lines.map(([role, txt]) => `<div class="line fade">${pic(who(role))}<p><b>${NAMES[role]}:</b> "<span class="say" data-say="${F(txt).replace(/"/g, '&quot;')}"></span>"</p></div>`).join('')}
     <div class="twist fade">${F(T.twist)}</div>${recall}`;
