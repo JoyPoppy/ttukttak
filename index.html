@@ -350,6 +350,15 @@ body.poster-mode { background: radial-gradient(1100px 600px at 18% 8%, color-mix
 .back .spres { margin: 6px 0; padding: 10px 12px; border-radius: 12px; background: #ffe9b3; color: #5a3c10; font: 600 13.5px/1.5 var(--font-ui); }
 .back .spres b { display: block; font: 800 17px/1.3 var(--font-title); color: #8a4a0a; }
 .nudgebox .spknown { color: #8a4a0a; font-weight: 700; }
+/* 하나씩 열리는 기능 — 아직 안 열린 건 숨김(body.lk-*) */
+body.lk-coins #coins, body.lk-coins #homeCoins, body.lk-coins .msheet .mcoin, body.lk-hint #nudge, body.lk-place #placeBtn, body.lk-timer #timer,
+body.lk-dex .pdex, body.lk-dex .msheet [data-go="dex"] { display: none !important; }
+.unlockbar { position: fixed; z-index: 40; left: 50%; top: calc(max(12px, env(safe-area-inset-top, 0px)) + 52px); transform: translateX(-50%); width: min(340px, calc(100vw - 24px)); padding: 10px 14px; border-radius: 14px; background: #fffaf0; color: var(--paper-ink); box-shadow: 0 12px 28px rgb(0 0 0 / .4); display: grid; gap: 3px; font: 600 13.5px/1.45 var(--font-ui); animation: bubIn .25s ease both; cursor: pointer; }
+.unlockbar[hidden] { display: none; }
+.unlockbar b { font: 800 15.5px/1.3 var(--font-title); color: #b3372a; }
+.newly { animation: newly 1s ease-in-out 3; }
+@keyframes newly { 50% { box-shadow: 0 0 0 4px rgb(255 207 110 / .65), 0 0 18px rgb(255 207 110 / .75); } }
+html.calm .newly { animation: none; box-shadow: 0 0 0 3px rgb(255 207 110 / .65); }
 .nudgebox .tskip { flex: none; white-space: nowrap; margin-left: auto; margin-right: 4px; border: 1.5px solid #c9b48a; background: none; color: #7a5c2e; border-radius: 99px; padding: 4px 10px; font: 600 12px/1 var(--font-ui); cursor: pointer; }
 .result { display: grid; gap: 2px; }
 .result > div { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
@@ -794,6 +803,7 @@ html.calm .clue.fresh.pop .st { animation: none; }
 <button class="gear" id="gear" type="button" aria-label="설정" aria-haspopup="dialog"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path fill="currentColor" d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58a.49.49 0 0 0 .12-.61l-1.92-3.32a.49.49 0 0 0-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54a.48.48 0 0 0-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96a.48.48 0 0 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58a.49.49 0 0 0-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6a3.6 3.6 0 1 1 0-7.2 3.6 3.6 0 0 1 0 7.2z"/></svg></button>
 <button class="gear menubtn" id="menuBtn" type="button" aria-label="메뉴" aria-haspopup="menu" aria-expanded="false">☰</button> <!-- 폰 홈만: 엽전·사건 목록·수첩·도감·설정을 메뉴 하나에 -->
 <div class="mdim" id="menuDim" hidden></div>
+<div class="unlockbar" id="unlockBar" role="status" hidden></div> <!-- 기능이 처음 열릴 때 '✨ 새로 생겼어요' -->
 <div class="msheet" id="menu" role="menu" aria-label="메뉴" hidden></div>
 <div class="over" id="settings" hidden role="dialog" aria-modal="true" aria-labelledby="setTitle">
   <div class="setbox">
@@ -1958,7 +1968,30 @@ function showHome() {
   clearInterval(ui.tick); ui.run++; clearCheer();
   $('#play').hidden = true; $('#home').hidden = false; document.body.classList.add('athome'); // 폰: 오른쪽 위가 ⚙ 대신 ☰
   ui.replayTut = false;
-  renderHome(); window.scrollTo({ top: 0 });
+  applyLocks(); renderHome(); window.scrollTo({ top: 0 }); announce('home');
+}
+
+// ---------- 하나씩 열리는 기능 ----------
+// 처음엔 판·얼굴·단서만. 몇 편을 깨야 보이나(UNLOCK) — 처음 열릴 때 한 번 '✨ 새로 생겼어요' 띠 + 그 버튼이 반짝(시험판에서 해 보고 사용자가 본편에 넣음)
+const UNLOCK = { coins: 1, book: 1, hint: 1, place: 2, dex: 5, timer: 9 };
+const NEWS = { coins: '🪙 엽전 — 사건을 풀면 받아요', book: '📒 사건 수첩·📜 사건 목록 — 푼 사건과 증거품', hint: '💡 힌트 — 막히면 눌러 봐요', place: '🧭 장소 — 낯선 말엔 밑줄, 누르면 뜻', dex: '👥 인물 도감 — 만난 인물들', timer: '⏱ 시계 — 기록을 겨뤄 봐요' };
+const SPOT = { coins: 'home', book: 'home', dex: 'home', hint: 'play', place: 'play', timer: 'play' }; // 어느 화면에서 알려 주나
+const GLOW = { coins: '#homeCoins, #menuBtn', book: '.ptop [data-book], .ptop [data-list], #menuBtn', dex: '.pdex, #menuBtn', hint: '#nudge', place: '#placeBtn', timer: '#timer' };
+const solvedCount = () => EPISODES.filter(ep => rec[ep.id]).length;
+// SEEN: 이미 알려 준(열린) 기능. 이 기능 전부터 풀던 저장(기록은 있는데 seen 없음)은 전부 연 채로 시작 — 있던 버튼이 갑자기 사라지지 않게
+let SEEN = store.get('seen', null);
+if (!SEEN) { SEEN = solvedCount() ? Object.fromEntries(Object.keys(UNLOCK).map(f => [f, true])) : {}; store.set('seen', SEEN); }
+const has = f => solvedCount() >= UNLOCK[f] || !!SEEN[f];
+function applyLocks() { for (const f of Object.keys(UNLOCK)) document.body.classList.toggle(`lk-${f}`, !has(f)); }
+function announce(where) {
+  const fresh = Object.keys(UNLOCK).filter(f => SPOT[f] === where && has(f) && !SEEN[f]);
+  if (!fresh.length) return;
+  for (const f of fresh) SEEN[f] = true;
+  store.set('seen', SEEN);
+  const bar = $('#unlockBar');
+  bar.innerHTML = `<b>✨ 새로 생겼어요</b>${fresh.map(f => `<span>${NEWS[f]}</span>`).join('')}`; bar.hidden = false;
+  clearTimeout(announce.t); announce.t = setTimeout(() => { bar.hidden = true; }, 5000);
+  for (const f of fresh) document.querySelectorAll(GLOW[f]).forEach(el => { el.classList.add('newly'); setTimeout(() => el.classList.remove('newly'), 4000); });
 }
 
 // ---------- 플레이 ----------
@@ -1979,11 +2012,13 @@ function start(id) {
   setZoom(1);
   $('#epNo').innerHTML = `${EP.special ? '🎯 특별 사건' : `${EPISODES.indexOf(EP) + 1}화`}<span class="stg"> · ${STAGE.name}</span>`; // 폰은 장소 이름을 숨김(사건 칸 첫 줄에 있음)
   $('#spBand').hidden = !EP.special;
+  applyLocks();
   $('#epTitle').textContent = EP.title;
   const s = posterStory(fill(EP.story, NAMES)); // 포스터에서 읽은 사건을 판 밑에도 — 진실 화면에서도 무슨 일이었는지 보이게
   ui.caseIntro = `${s.lead ? `${s.lead} ` : ''}<strong>${s.hook}</strong>`; // 판 밑 사건 칸: 사건 소개만 (drawCase)
   $('#home').hidden = true; $('#play').hidden = false; document.body.classList.remove('athome');
   reset();
+  announce('play');
 }
 function setZoom(z) { ui.zoom = z; $('#room').style.setProperty('--zoom', z); }
 // 처음부터 = 새 판: 다른 변형(자리·단서)을 고른다
@@ -2113,7 +2148,7 @@ function render() {
 // ---------- 장소 말 뜻 쪽지 · 🧭 장소 안내 ----------
 // 단서 속 낯선 장소 말에 점선 밑줄(누르면 뜻 + 판의 그 줄/1번 쪽 끝을 2초 강조). 강조는 줄·끝 단위라 정답 자리는 안 드러남
 const esc = s => s.replace(/[&<>"]/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[ch]);
-const T = text => markTerms(text, TERMS).map(p => p.term
+const T = text => !has('place') ? esc(text) : markTerms(text, TERMS).map(p => p.term // 🧭 장소가 열리기 전엔 밑줄 없이
   ? `<span class="term${ui.termOn === p.term.id ? ' on' : ''}" data-term="${p.term.id}" role="button" tabindex="0">${esc(p.text)}</span>` : esc(p.text)).join('');
 const rowSpot = r => { const n = EP.board.rows; return r === 0 ? (n === 2 ? '윗줄' : '맨 윗줄') : r === n - 1 ? (n === 2 ? '아랫줄' : '맨 아랫줄') : n === 3 ? '가운데 줄' : `위에서 ${['', '둘째', '셋째'][r]} 줄`; };
 const zoneWhere = z => z.kind === 'row' ? `판에서는 ${rowSpot(z.r)}이에요.` : `판에서는 1번 자리 쪽 끝이에요(1번이 ${STAGE.place.near} 바로 앞).`;
@@ -2202,7 +2237,7 @@ function nudgeView() {
     view.html = box(tutHead || '💡 생각의 실마리', body, level < 2, `${story ? '이야기' : '둘째'} 단서도 표시`);
     return view;
   }
-  if (!level) { view.html = box(tutHead || '💡 생각의 실마리', '<p>이제 혼자! 막히면 💡</p>'); return view; }
+  if (!level) { view.html = box(tutHead || '💡 생각의 실마리', `<p>이제 혼자!${has('hint') ? ' 막히면 💡' : ''}</p>`); return view; }
   const clues = variant().clues, st = stepNow();
   if (!st) { view.html = box('💡 생각의 실마리', '<p>지금은 실마리를 찾지 못했어요. 단서를 하나씩 다시 읽어 보거나, 힌트를 한 번 더 눌러 족집게로 한 명을 앉혀 보세요.</p>', !!price, '족집게로 한 명 앉히기'); return view; }
   if (ui.tut && placed < tutSteps) tutHead = `안내 ${placed + 1}/${tutSteps} · ${tutTitle(placed, st.kind)}`;
@@ -2650,7 +2685,7 @@ function disarm() { clearTimeout(wipeT); const b = $('#wipe'); b.classList.remov
 $('#wipe').addEventListener('click', () => {
   const b = $('#wipe');
   if (!b.classList.contains('armed')) { b.classList.add('armed'); b.firstChild.textContent = '정말 지울까요? 한 번 더 누르면 지워져요'; wipeT = setTimeout(disarm, 4000); return; }
-  wallet.coins = START_COINS; rec = {}; lastVar = {}; saveAll(); disarm(); closeSettings(); showHome(); toast('진행을 초기화했어요. 처음부터 시작해요!', true);
+  wallet.coins = START_COINS; rec = {}; lastVar = {}; SEEN = {}; store.set('seen', SEEN); saveAll(); disarm(); closeSettings(); showHome(); toast('진행을 초기화했어요. 처음부터 시작해요!', true);
 });
 $('#gear').addEventListener('click', openSettings);
 $('#setClose').addEventListener('click', closeSettings);
@@ -2670,6 +2705,7 @@ addEventListener('scroll', () => document.documentElement.classList.toggle('scro
 document.documentElement.style.setProperty('--memo-stitch', `url(${img('memo_stitch.webp')})`);
 document.documentElement.style.setProperty('--memo-paper', `url(${img('memo_paper.webp')})`);
 applySettings();
+$('#unlockBar').addEventListener('click', () => { $('#unlockBar').hidden = true; });
 showHome();
 </script>
 </body>
